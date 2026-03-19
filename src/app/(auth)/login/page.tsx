@@ -7,10 +7,10 @@ export default function LoginPage() {
     <AuthLayout>
       <div className="text-center mb-6">
         <h1 className="font-serif text-2xl font-semibold text-onyx">
-          Staff Sign In
+          Sign In
         </h1>
         <p className="mt-2 text-sm text-slate">
-          Enter your credentials to access the portal
+          Enter your credentials to access your portal
         </p>
       </div>
 

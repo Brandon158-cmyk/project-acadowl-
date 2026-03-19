@@ -35,11 +35,32 @@ export const listActive = query({
       .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
       .unique();
 
-    if (!user || user.role !== 'platform_admin') return [];
+    if (!user || user.role !== 'platform_admin') {
+      throw new Error('FORBIDDEN: Only platform admins can list schools');
+    }
 
     return ctx.db
       .query('schools')
       .withIndex('by_active', (q) => q.eq('isActive', true))
       .collect();
+  },
+});
+
+// List ALL schools — active and inactive (platform admin only)
+export const listAll = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
+      .unique();
+
+    if (!user || user.role !== 'platform_admin') {
+      throw new Error('FORBIDDEN: Only platform admins can list schools');
+    }
+
+    return ctx.db.query('schools').collect();
   },
 });

@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { mutation, query } from '../_generated/server';
+import { query } from '../_generated/server';
 import { withSchoolScope } from '../_lib/schoolContext';
 import { requirePermission, Permission } from '../_lib/permissions';
 
@@ -71,6 +71,40 @@ export const get = query({
 
       return user;
     });
+  },
+});
+
+// Get user by token identifier (used by actions internally)
+export const getByToken = query({
+  args: { tokenIdentifier: v.string() },
+  handler: async (ctx, args) => {
+    return ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', args.tokenIdentifier))
+      .unique();
+  },
+});
+
+// List users by school (platform admin only)
+export const listBySchool = query({
+  args: { schoolId: v.id('schools') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const caller = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
+      .unique();
+
+    if (!caller || caller.role !== 'platform_admin') {
+      throw new Error('FORBIDDEN: Only platform admins can list users by school');
+    }
+
+    return ctx.db
+      .query('users')
+      .withIndex('by_school', (q) => q.eq('schoolId', args.schoolId))
+      .collect();
   },
 });
 

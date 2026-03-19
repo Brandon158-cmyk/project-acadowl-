@@ -89,9 +89,13 @@ export function OtpForm() {
         return;
       }
 
-      await resolveProfile();
+      const user = await resolveProfile();
       sessionStorage.removeItem('otp_phone');
-      router.push('/dashboard');
+      if (user?.isFirstLogin) {
+        router.push('/reset-password');
+      } else {
+        router.push('/dashboard');
+      }
       router.refresh();
     } catch {
       setError('Something went wrong. Please try again shortly.');

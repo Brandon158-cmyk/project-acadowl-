@@ -1,5 +1,5 @@
 import { AuthLayout } from '@/components/layout/AuthLayout';
-import Link from 'next/link';
+import { ForceResetPasswordForm } from '@/components/auth/ForceResetPasswordForm';
 
 export default function ResetPasswordPage() {
   return (
@@ -9,25 +9,11 @@ export default function ResetPasswordPage() {
           Set New Password
         </h1>
         <p className="mt-2 text-sm text-slate">
-          Enter your new password below
+          You must set a new password before continuing
         </p>
       </div>
 
-      {/* ResetPasswordForm will be built when Supabase password reset flow is wired */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <p className="text-sm text-slate text-center">
-          Password reset form will be implemented with Supabase auth flow.
-        </p>
-      </div>
-
-      <div className="mt-6 pt-4 border-t border-gray-200 text-center">
-        <Link
-          href="/login"
-          className="text-sm text-slate hover:text-onyx transition-colors duration-200"
-        >
-          Back to sign in
-        </Link>
-      </div>
+      <ForceResetPasswordForm />
     </AuthLayout>
   );
 }

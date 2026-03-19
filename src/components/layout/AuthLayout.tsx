@@ -16,7 +16,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl bg-white p-8 shadow-[var(--shadow-card)] border border-gray-200 border-t-4 border-t-school-primary">
+          <div className="rounded-2xl bg-white p-8 shadow-[var(--shadow-card)] border border-gray-200">
             {children}
           </div>
 

@@ -151,6 +151,63 @@ export const createUserFromAdmin = mutation({
   },
 });
 
+// Create a platform admin (invite-key gated)
+export const createPlatformAdmin = mutation({
+  args: {
+    tokenIdentifier: v.string(),
+    supabaseId: v.string(),
+    name: v.string(),
+    email: v.string(),
+    inviteKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Validate invite key server-side
+    const validKey = process.env.PLATFORM_ADMIN_INVITE_KEY;
+    if (!validKey || args.inviteKey !== validKey) {
+      throw new Error('FORBIDDEN: Invalid invite key');
+    }
+
+    // Check if user already exists
+    const existing = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', args.tokenIdentifier))
+      .unique();
+
+    if (existing) {
+      throw new Error('CONFLICT: User already exists');
+    }
+
+    const userId = await ctx.db.insert('users', {
+      tokenIdentifier: args.tokenIdentifier,
+      supabaseId: args.supabaseId,
+      email: args.email,
+      name: args.name,
+      role: 'platform_admin',
+      isActive: true,
+      isFirstLogin: false,
+      notifPrefs: {
+        sms: false,
+        whatsapp: false,
+        email: true,
+        inApp: true,
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      lastLoginAt: Date.now(),
+    });
+
+    await ctx.db.insert('platformAdmins', {
+      userId,
+      email: args.email,
+      name: args.name,
+      isSuperAdmin: false,
+      createdAt: Date.now(),
+    });
+
+    return userId;
+  },
+});
+
 // Update user profile (self-service)
 export const updateProfile = mutation({
   args: {

@@ -16,6 +16,7 @@ import type * as schools_mutations from "../schools/mutations.js";
 import type * as schools_queries from "../schools/queries.js";
 import type * as schools_validators from "../schools/validators.js";
 import type * as seed from "../seed.js";
+import type * as users_actions from "../users/actions.js";
 import type * as users_mutations from "../users/mutations.js";
 import type * as users_queries from "../users/queries.js";
 import type * as users_validators from "../users/validators.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   "schools/queries": typeof schools_queries;
   "schools/validators": typeof schools_validators;
   seed: typeof seed;
+  "users/actions": typeof users_actions;
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;
   "users/validators": typeof users_validators;

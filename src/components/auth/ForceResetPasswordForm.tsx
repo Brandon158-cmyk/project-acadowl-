@@ -10,46 +10,46 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useMutation } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
 
-const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
-export function LoginForm() {
-  const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
-  const resolveProfile = useMutation(api.users.mutations.resolveUserProfile);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+const resetSchema = z
+  .object({
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+type ResetFormData = z.infer<typeof resetSchema>;
+
+export function ForceResetPasswordForm() {
+  const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
+  const completeFirstLogin = useMutation(api.users.mutations.completeFirstLogin);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<ResetFormData>({
+    resolver: zodResolver(resetSchema),
+    defaultValues: { password: '', confirmPassword: '' },
+  });
+
+  const onSubmit = async (data: ResetFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
+      const { error } = await supabase.auth.updateUser({
         password: data.password,
       });
 
       if (error) {
-        form.setError('root', { message: 'Incorrect email or password. Please try again.' });
+        form.setError('root', { message: error.message });
         return;
       }
 
-      const user = await resolveProfile();
-      if (user?.isFirstLogin) {
-        router.push('/reset-password');
-      } else {
-        router.push('/dashboard');
-      }
+      await completeFirstLogin();
+      router.push('/dashboard');
       router.refresh();
     } catch {
-      form.setError('root', { message: 'Something went wrong. Please try again shortly.' });
+      form.setError('root', { message: 'Something went wrong. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -67,38 +67,39 @@ export function LoginForm() {
       )}
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-onyx mb-1.5">
-          Email address
-        </label>
-        <input
-          {...form.register('email')}
-          type="email"
-          id="email"
-          autoComplete="email"
-          className="block w-full h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm text-onyx placeholder:text-slate transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-school-primary/20 focus:border-school-primary"
-          placeholder="you@school.edu.zm"
-        />
-        {form.formState.errors.email && (
-          <p role="alert" className="mt-1.5 text-xs text-error">
-            {form.formState.errors.email.message}
-          </p>
-        )}
-      </div>
-
-      <div>
         <label htmlFor="password" className="block text-sm font-medium text-onyx mb-1.5">
-          Password
+          New password
         </label>
         <input
           {...form.register('password')}
           type="password"
           id="password"
-          autoComplete="current-password"
+          autoComplete="new-password"
           className="block w-full h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm text-onyx placeholder:text-slate transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-school-primary/20 focus:border-school-primary"
+          placeholder="Minimum 8 characters"
         />
         {form.formState.errors.password && (
           <p role="alert" className="mt-1.5 text-xs text-error">
             {form.formState.errors.password.message}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="confirmPassword" className="block text-sm font-medium text-onyx mb-1.5">
+          Confirm new password
+        </label>
+        <input
+          {...form.register('confirmPassword')}
+          type="password"
+          id="confirmPassword"
+          autoComplete="new-password"
+          className="block w-full h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm text-onyx placeholder:text-slate transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-school-primary/20 focus:border-school-primary"
+          placeholder="Re-enter your new password"
+        />
+        {form.formState.errors.confirmPassword && (
+          <p role="alert" className="mt-1.5 text-xs text-error">
+            {form.formState.errors.confirmPassword.message}
           </p>
         )}
       </div>
@@ -111,10 +112,10 @@ export function LoginForm() {
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            Signing in...
+            Setting password...
           </>
         ) : (
-          'Sign in'
+          'Set new password'
         )}
       </button>
     </form>

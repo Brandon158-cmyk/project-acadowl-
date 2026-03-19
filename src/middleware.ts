@@ -54,7 +54,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/login') ||
     path.startsWith('/register') ||
     path.startsWith('/forgot-password') ||
-    path.startsWith('/reset-password');
+    path.startsWith('/reset-password') ||
+    path === '/signup';
 
   // 4. Enforce auth — redirect unauthenticated users to login
   if (!user && !isAuthRoute) {
