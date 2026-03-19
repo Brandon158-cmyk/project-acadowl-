@@ -29,10 +29,11 @@ export const adminCreateUser: ReturnType<typeof action> = action({
     }
 
     // 2. Create user in Supabase via Admin API
-    const supabaseUrl = process.env.AUTH_DOMAIN;
+    const authDomain = process.env.AUTH_DOMAIN;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !serviceRoleKey) {
+    if (!authDomain || !supabaseUrl || !serviceRoleKey) {
       throw new Error('INTERNAL: Missing Supabase service role configuration');
     }
 
@@ -61,7 +62,7 @@ export const adminCreateUser: ReturnType<typeof action> = action({
 
     const supabaseUser = await supabaseResponse.json();
     const supabaseId = supabaseUser.id as string;
-    const tokenIdentifier = `${supabaseUrl}|${supabaseId}`;
+    const tokenIdentifier = `${authDomain}|${supabaseId}`;
 
     // 3. Create Convex user record
     const userId = await ctx.runMutation(internal.users.mutations.createUserFromAdmin, {

@@ -5,27 +5,39 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { TeacherSidebar } from '@/components/layout/TeacherSidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { useMobileNav } from '@/components/layout/MobileNav';
+import { PageSkeleton } from '@/components/shared/LoadingSkeleton';
 import { useMe } from '@/hooks/useMe';
+import { SchoolProvider } from '@/providers/SchoolProvider';
 
 export default function TeacherLayout({ children }: { children: ReactNode }) {
   const { isOpen, close, toggle } = useMobileNav();
-  const { user } = useMe();
+  const { user, isLoading } = useMe();
+
+  if (isLoading) {
+    return <PageSkeleton />;
+  }
+
+  if (!user?.school?.slug) {
+    return <AuthGuard>{children}</AuthGuard>;
+  }
 
   return (
     <AuthGuard>
-      <div className="flex h-screen overflow-hidden bg-parchment">
-        <TeacherSidebar isOpen={isOpen} onClose={close} />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <Topbar
-            schoolName={user?.school?.name}
-            schoolLogoUrl={user?.school?.branding?.logoUrl}
-            onMenuToggle={toggle}
-          />
-          <main className="flex-1 overflow-y-auto p-6">
-            {children}
-          </main>
+      <SchoolProvider slug={user.school.slug}>
+        <div className="flex h-screen overflow-hidden bg-parchment">
+          <TeacherSidebar isOpen={isOpen} onClose={close} />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <Topbar
+              schoolName={user.school.name}
+              schoolLogoUrl={user.school.branding?.logoUrl}
+              onMenuToggle={toggle}
+            />
+            <main className="flex-1 overflow-y-auto p-6">
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
+      </SchoolProvider>
     </AuthGuard>
   );
 }

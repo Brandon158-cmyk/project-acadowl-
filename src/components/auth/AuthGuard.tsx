@@ -12,13 +12,14 @@ interface AuthGuardProps {
 // Blocks rendering until the user is authenticated via Convex
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
   const { isLoading, isAuthenticated } = useConvexAuth();
+  const resolvedFallback = fallback ?? <PageSkeleton />;
 
   if (isLoading) {
-    return fallback ?? <PageSkeleton />;
+    return resolvedFallback;
   }
 
   if (!isAuthenticated) {
-    return null;
+    return resolvedFallback;
   }
 
   return <>{children}</>;
