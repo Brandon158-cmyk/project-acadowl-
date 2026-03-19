@@ -8,17 +8,10 @@ import { Topbar } from '@/components/layout/Topbar';
 import { useMobileNav } from '@/components/layout/MobileNav';
 import { useMe } from '@/hooks/useMe';
 
-export default function PlatformLayout({ children }: { children: ReactNode }) {
+function PlatformShell({ children }: { children: ReactNode }) {
   const { isOpen, close, toggle } = useMobileNav();
   const { user, isLoading } = useMe();
-  const pathname = usePathname();
 
-  // Allow unauthenticated access to /signup
-  if (pathname === '/signup') {
-    return <>{children}</>;
-  }
-
-  // Role guard — only platform_admin can access
   if (!isLoading && user && user.role !== 'platform_admin') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-parchment">
@@ -48,4 +41,15 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
       </div>
     </AuthGuard>
   );
+}
+
+export default function PlatformLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+
+  // Signup page renders without auth shell — no useMe, no AuthGuard
+  if (pathname === '/signup') {
+    return <>{children}</>;
+  }
+
+  return <PlatformShell>{children}</PlatformShell>;
 }

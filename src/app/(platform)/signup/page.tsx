@@ -49,35 +49,103 @@ export default function PlatformSignupPage() {
     defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
   });
 
-  const onKeySubmit = (data: InviteKeyData) => {
-    setInviteKey(data.inviteKey);
-    setStep('signup');
+  const createPlatformAdminWithRetry = async (payload: {
+    supabaseId: string;
+    name: string;
+    email: string;
+    inviteKey: string;
+  }) => {
+    let lastError: unknown = null;
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      try {
+        return await createPlatformAdmin(payload);
+      } catch (error) {
+        lastError = error;
+
+        const message = error instanceof Error ? error.message : '';
+        if (!message.includes('UNAUTHENTICATED')) {
+          throw error;
+        }
+
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, 300);
+        });
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Unable to complete signup. Please try again.');
+  };
+
+  const onKeySubmit = async (data: InviteKeyData) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/validate-invite-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteKey: data.inviteKey }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.valid) {
+        keyForm.setError('inviteKey', {
+          message: result.error ?? 'Invalid invite key',
+        });
+        return;
+      }
+
+      setInviteKey(data.inviteKey);
+      setStep('signup');
+    } catch {
+      keyForm.setError('inviteKey', { message: 'Unable to validate key. Try again.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onSignup = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: { role: 'platform_admin', name: data.name },
-        },
+      // 1. Create user via server-side API route (uses Supabase Admin API)
+      const res = await fetch('/api/platform-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          inviteKey,
+        }),
       });
 
-      if (signUpError || !authData.user) {
+      const result = await res.json();
+
+      if (!res.ok || !result.user) {
         signupForm.setError('root', {
-          message: signUpError?.message ?? 'Failed to create account',
+          message: result.error ?? 'Failed to create account',
         });
         return;
       }
 
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const tokenIdentifier = `${supabaseUrl}|${authData.user.id}`;
+      // 2. Sign in immediately (user was created with email_confirm: true)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
 
-      await createPlatformAdmin({
-        tokenIdentifier,
-        supabaseId: authData.user.id,
+      if (signInError) {
+        signupForm.setError('root', {
+          message: 'Account created but sign-in failed. Please go to the login page.',
+        });
+        return;
+      }
+
+      // 3. Create Convex user record
+      await createPlatformAdminWithRetry({
+        supabaseId: result.user.id,
         name: data.name,
         email: data.email,
         inviteKey,
@@ -136,9 +204,17 @@ export default function PlatformSignupPage() {
 
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center h-11 rounded-lg bg-school-primary px-4 text-sm font-semibold text-white shadow-sm hover:bg-crimson-dark focus:outline-none focus:ring-2 focus:ring-school-primary/20 focus:ring-offset-2 active:scale-[0.98] transition-all duration-200"
+            disabled={isLoading}
+            className="inline-flex w-full items-center justify-center h-11 rounded-lg bg-school-primary px-4 text-sm font-semibold text-white shadow-sm hover:bg-crimson-dark focus:outline-none focus:ring-2 focus:ring-school-primary/20 focus:ring-offset-2 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
           >
-            Continue
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                Validating...
+              </>
+            ) : (
+              'Continue'
+            )}
           </button>
         </form>
       </AuthLayout>

@@ -94,7 +94,15 @@ export function OtpForm() {
       if (user?.isFirstLogin) {
         router.push('/reset-password');
       } else {
-        router.push('/dashboard');
+        const role = user?.role as string | undefined;
+        const ROLE_DASHBOARDS: Record<string, string> = {
+          platform_admin: '/schools',
+          teacher: '/my-classes',
+          class_teacher: '/my-classes',
+          guardian: '/home',
+          student: '/portal',
+        };
+        router.push(role ? (ROLE_DASHBOARDS[role] ?? '/dashboard') : '/dashboard');
       }
       router.refresh();
     } catch {

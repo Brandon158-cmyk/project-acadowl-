@@ -80,7 +80,7 @@ export default function PlatformSchoolsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {schools.map((school) => (
+                {schools.map((school: any) => (
                   <tr key={school._id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-4">
                       <div>

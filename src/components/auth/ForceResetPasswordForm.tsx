@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
 
 const resetSchema = z
@@ -26,6 +26,7 @@ export function ForceResetPasswordForm() {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const completeFirstLogin = useMutation(api.users.mutations.completeFirstLogin);
+  const me = useQuery(api.users.queries.me);
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<ResetFormData>({
@@ -46,7 +47,15 @@ export function ForceResetPasswordForm() {
       }
 
       await completeFirstLogin();
-      router.push('/dashboard');
+      const role = me?.role as string | undefined;
+      const ROLE_DASHBOARDS: Record<string, string> = {
+        platform_admin: '/schools',
+        teacher: '/my-classes',
+        class_teacher: '/my-classes',
+        guardian: '/home',
+        student: '/portal',
+      };
+      router.push(role ? (ROLE_DASHBOARDS[role] ?? '/dashboard') : '/dashboard');
       router.refresh();
     } catch {
       form.setError('root', { message: 'Something went wrong. Please try again.' });

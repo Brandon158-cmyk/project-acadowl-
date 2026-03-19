@@ -1,11 +1,12 @@
 import { v } from 'convex/values';
 import { action } from '../_generated/server';
 import { api } from '../_generated/api';
+import { internal } from '../_generated/api';
 import { Role } from '../schema';
 
 // Admin-create a user in Supabase + Convex (platform admin only)
 // Uses Supabase Admin API via service role key
-export const adminCreateUser = action({
+export const adminCreateUser: ReturnType<typeof action> = action({
   args: {
     name: v.string(),
     email: v.string(),
@@ -63,7 +64,7 @@ export const adminCreateUser = action({
     const tokenIdentifier = `${supabaseUrl}|${supabaseId}`;
 
     // 3. Create Convex user record
-    const userId = await ctx.runMutation(api.users.mutations.createUserFromAdmin, {
+    const userId = await ctx.runMutation(internal.users.mutations.createUserFromAdmin, {
       tokenIdentifier,
       supabaseId,
       email: args.email,
@@ -76,3 +77,4 @@ export const adminCreateUser = action({
     return { userId, supabaseId };
   },
 });
+

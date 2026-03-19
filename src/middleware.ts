@@ -54,8 +54,11 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/login') ||
     path.startsWith('/register') ||
     path.startsWith('/forgot-password') ||
-    path.startsWith('/reset-password') ||
     path === '/signup';
+
+  // /reset-password is NOT an auth route — it must be accessible to
+  // authenticated users (forced password reset + forgot-password recovery).
+  // Unauthenticated users hitting it will be redirected to /login by rule 4.
 
   // 4. Enforce auth — redirect unauthenticated users to login
   if (!user && !isAuthRoute) {
@@ -74,6 +77,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/webhooks|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

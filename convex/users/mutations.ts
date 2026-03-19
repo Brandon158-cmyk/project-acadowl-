@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { mutation, type MutationCtx } from '../_generated/server';
+import { mutation, internalMutation, type MutationCtx } from '../_generated/server';
 import type { Doc } from '../_generated/dataModel';
 import { withSchoolScope } from '../_lib/schoolContext';
 import { Role } from '../schema';
@@ -116,7 +116,7 @@ async function autoLinkProfile(ctx: MutationCtx, user: Doc<'users'>) {
 
 // Create a user from admin (server-side only, uses Supabase Admin API)
 // This is called from an action that creates the Supabase auth user first
-export const createUserFromAdmin = mutation({
+export const createUserFromAdmin = internalMutation({
   args: {
     tokenIdentifier: v.string(),
     supabaseId: v.string(),
@@ -154,23 +154,34 @@ export const createUserFromAdmin = mutation({
 // Create a platform admin (invite-key gated)
 export const createPlatformAdmin = mutation({
   args: {
-    tokenIdentifier: v.string(),
     supabaseId: v.string(),
     name: v.string(),
     email: v.string(),
     inviteKey: v.string(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('UNAUTHENTICATED: No valid session');
+    }
+
     // Validate invite key server-side
     const validKey = process.env.PLATFORM_ADMIN_INVITE_KEY;
     if (!validKey || args.inviteKey !== validKey) {
       throw new Error('FORBIDDEN: Invalid invite key');
     }
 
+    const tokenIdentifier = identity.tokenIdentifier;
+    const identitySupabaseId = tokenIdentifier.split('|')[1];
+
+    if (!identitySupabaseId || identitySupabaseId !== args.supabaseId) {
+      throw new Error('FORBIDDEN: Authenticated user does not match signup user');
+    }
+
     // Check if user already exists
     const existing = await ctx.db
       .query('users')
-      .withIndex('by_token', (q) => q.eq('tokenIdentifier', args.tokenIdentifier))
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', tokenIdentifier))
       .unique();
 
     if (existing) {
@@ -178,8 +189,8 @@ export const createPlatformAdmin = mutation({
     }
 
     const userId = await ctx.db.insert('users', {
-      tokenIdentifier: args.tokenIdentifier,
-      supabaseId: args.supabaseId,
+      tokenIdentifier,
+      supabaseId: identitySupabaseId,
       email: args.email,
       name: args.name,
       role: 'platform_admin',
