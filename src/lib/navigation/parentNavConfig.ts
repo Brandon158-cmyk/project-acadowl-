@@ -18,29 +18,29 @@ export interface NavItem {
 export const parentNavConfig: NavItem[] = [
   {
     label: 'Home',
-    href: '/dashboard',
+    href: '/home',
     icon: LayoutDashboard,
   },
   {
     label: 'Progress',
-    href: '/progress',
+    href: '/home/progress',
     icon: GraduationCap,
   },
   {
     label: 'Attendance',
-    href: '/attendance',
+    href: '/home/attendance',
     icon: ClipboardCheck,
     feature: Feature.ATTENDANCE,
   },
   {
     label: 'Fees',
-    href: '/fees',
+    href: '/home/fees',
     icon: DollarSign,
     feature: Feature.FEES,
   },
   {
     label: 'Notices',
-    href: '/notices',
+    href: '/home/notices',
     icon: Bell,
   },
 ];

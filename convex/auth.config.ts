@@ -1,4 +1,4 @@
-export default {
+const authConfig = {
   providers: [
     {
       type: 'customJwt',
@@ -9,3 +9,5 @@ export default {
     },
   ],
 };
+
+export default authConfig;

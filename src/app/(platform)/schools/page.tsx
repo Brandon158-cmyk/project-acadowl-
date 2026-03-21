@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
+import type { FunctionReturnType } from 'convex/server';
 import { Plus, Building2 } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton';
 import { CreateSchoolModal } from './CreateSchoolModal';
+
+type SchoolRow = FunctionReturnType<typeof api.schools.queries.listAll>[number];
 
 const SCHOOL_TYPE_LABELS: Record<string, string> = {
   primary_day: 'Primary Day',
@@ -80,7 +83,7 @@ export default function PlatformSchoolsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {schools.map((school: any) => (
+                {schools.map((school: SchoolRow) => (
                   <tr key={school._id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-4">
                       <div>

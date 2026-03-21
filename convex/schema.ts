@@ -94,6 +94,28 @@ const StaffRole = v.union(
   v.literal('support_staff'),
 );
 
+const AcademicYearStatus = v.union(
+  v.literal('draft'),
+  v.literal('active'),
+  v.literal('closed'),
+);
+
+const SchoolEventType = v.union(
+  v.literal('holiday'),
+  v.literal('exam_period'),
+  v.literal('sports_day'),
+  v.literal('school_closure'),
+  v.literal('parent_teacher'),
+  v.literal('general'),
+);
+
+const SubjectCategory = v.union(
+  v.literal('core'),
+  v.literal('elective'),
+  v.literal('technical'),
+  v.literal('custom'),
+);
+
 // ── Schema ──
 
 export default defineSchema({
@@ -132,6 +154,35 @@ export default defineSchema({
     // Academic config
     gradingMode: v.optional(v.union(v.literal('ecz'), v.literal('gpa'), v.literal('custom'))),
     academicMode: v.optional(v.union(v.literal('term'), v.literal('semester'))),
+    currentAcademicYearId: v.optional(v.id('academicYears')),
+    currentTermId: v.optional(v.id('terms')),
+    periodConfig: v.optional(v.object({
+      periodsPerDay: v.number(),
+      firstPeriodStartTime: v.optional(v.string()),
+      lessonDurationMinutes: v.number(),
+      shortBreakMinutes: v.optional(v.number()),
+      longBreakMinutes: v.optional(v.number()),
+    })),
+    smsTemplates: v.optional(v.object({
+      absenceAlert: v.optional(v.string()),
+      attendanceBroadcast: v.optional(v.string()),
+      academicYearActivated: v.optional(v.string()),
+    })),
+    gradingScales: v.optional(v.array(v.object({
+      name: v.string(),
+      code: v.string(),
+      minScore: v.number(),
+      maxScore: v.number(),
+      gradeLabel: v.string(),
+      points: v.optional(v.number()),
+      remarks: v.optional(v.string()),
+    }))),
+    reportCardConfig: v.optional(v.object({
+      showClassTeacherRemarks: v.boolean(),
+      showPrincipalRemarks: v.boolean(),
+      showAttendanceSummary: v.boolean(),
+      showSubjectPositions: v.boolean(),
+    })),
 
     // Features & subscription
     enabledFeatures: v.array(Feature),
@@ -351,14 +402,17 @@ export default defineSchema({
   academicYears: defineTable({
     schoolId: v.id('schools'),
     name: v.string(),
+    year: v.optional(v.number()),
     startDate: v.number(),
     endDate: v.number(),
     isCurrent: v.boolean(),
+    status: v.optional(AcademicYearStatus),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index('by_school', ['schoolId'])
-    .index('by_current', ['schoolId', 'isCurrent']),
+    .index('by_current', ['schoolId', 'isCurrent'])
+    .index('by_year', ['schoolId', 'year']),
 
   terms: defineTable({
     schoolId: v.id('schools'),
@@ -367,6 +421,7 @@ export default defineSchema({
     startDate: v.number(),
     endDate: v.number(),
     isCurrent: v.boolean(),
+    status: v.optional(v.union(v.literal('upcoming'), v.literal('active'), v.literal('closed'))),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -379,6 +434,9 @@ export default defineSchema({
     name: v.string(),
     level: v.number(),
     isActive: v.boolean(),
+    graduationGrade: v.optional(v.boolean()),
+    isEczExamYear: v.optional(v.boolean()),
+    hasPracticalAssessment: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -407,6 +465,12 @@ export default defineSchema({
     name: v.string(),
     code: v.optional(v.string()),
     isCore: v.boolean(),
+    category: v.optional(SubjectCategory),
+    gradeIds: v.optional(v.array(v.id('grades'))),
+    isCompulsory: v.optional(v.boolean()),
+    isStemSubject: v.optional(v.boolean()),
+    theoryWeight: v.optional(v.number()),
+    practicalWeight: v.optional(v.number()),
     eczSubjectCode: v.optional(v.string()),
     isActive: v.boolean(),
     createdAt: v.number(),
@@ -414,6 +478,65 @@ export default defineSchema({
   })
     .index('by_school', ['schoolId'])
     .index('by_code', ['schoolId', 'code']),
+
+  schoolEvents: defineTable({
+    schoolId: v.id('schools'),
+    academicYearId: v.id('academicYears'),
+    termId: v.optional(v.id('terms')),
+    title: v.string(),
+    description: v.optional(v.string()),
+    startDate: v.string(),
+    endDate: v.string(),
+    type: SchoolEventType,
+    affectsAttendance: v.boolean(),
+    visibleToParents: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_academic_year', ['schoolId', 'academicYearId'])
+    .index('by_term', ['schoolId', 'termId']),
+
+  counters: defineTable({
+    schoolId: v.id('schools'),
+    key: v.string(),
+    value: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_school_key', ['schoolId', 'key']),
+
+  staffSubjectAssignments: defineTable({
+    schoolId: v.id('schools'),
+    staffId: v.id('staff'),
+    subjectId: v.id('subjects'),
+    gradeId: v.optional(v.id('grades')),
+    sectionId: v.optional(v.id('sections')),
+    academicYearId: v.optional(v.id('academicYears')),
+    isPrimaryTeacher: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_staff', ['schoolId', 'staffId'])
+    .index('by_subject', ['schoolId', 'subjectId'])
+    .index('by_section', ['schoolId', 'sectionId']),
+
+  sectionHistory: defineTable({
+    schoolId: v.id('schools'),
+    studentId: v.id('students'),
+    gradeId: v.id('grades'),
+    sectionId: v.id('sections'),
+    academicYearId: v.optional(v.id('academicYears')),
+    termId: v.optional(v.id('terms')),
+    reason: v.optional(v.string()),
+    effectiveDate: v.number(),
+    createdBy: v.id('users'),
+    createdAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_student', ['schoolId', 'studentId'])
+    .index('by_section', ['schoolId', 'sectionId']),
 
   timetableSlots: defineTable({
     schoolId: v.id('schools'),
@@ -585,7 +708,8 @@ export default defineSchema({
 
   notifications: defineTable({
     schoolId: v.id('schools'),
-    userId: v.id('users'),
+    userId: v.optional(v.id('users')),
+    recipientPhone: v.optional(v.string()),
     type: v.union(
       v.literal('attendance'),
       v.literal('fees'),
@@ -593,10 +717,19 @@ export default defineSchema({
       v.literal('general'),
       v.literal('emergency'),
     ),
+    channel: v.optional(v.union(v.literal('in_app'), v.literal('sms'))),
     title: v.string(),
     body: v.string(),
     isRead: v.boolean(),
     link: v.optional(v.string()),
+    status: v.optional(v.union(v.literal('queued'), v.literal('sent'), v.literal('delivered'), v.literal('failed'))),
+    provider: v.optional(v.union(v.literal('airtel'), v.literal('mtn'))),
+    providerMessageId: v.optional(v.string()),
+    providerResponse: v.optional(v.string()),
+    retryCount: v.optional(v.number()),
+    nextRetryAt: v.optional(v.number()),
+    relatedEntityType: v.optional(v.string()),
+    relatedEntityId: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index('by_school', ['schoolId'])

@@ -76,6 +76,25 @@
   --font-serif: var(--font-playfair);
 }
 
+ button:not(:disabled),
+ [role='button']:not([aria-disabled='true']),
+ a[href],
+ summary,
+ select:not(:disabled),
+ label[for],
+ input[type='button']:not(:disabled),
+ input[type='submit']:not(:disabled),
+ input[type='reset']:not(:disabled) {
+  cursor: pointer !important;
+ }
+
+ button:disabled,
+ select:disabled,
+ input:disabled,
+ [role='button'][aria-disabled='true'] {
+  cursor: not-allowed !important;
+ }
+
 body {
   background: var(--parchment);
   color: var(--onyx);

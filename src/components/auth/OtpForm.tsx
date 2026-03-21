@@ -8,6 +8,24 @@ import { normalizeZambianPhone } from '@/lib/utils/normalizePhone';
 import { useMutation } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
 
+async function waitForSession() {
+  const supabase = createSupabaseBrowserClient();
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      return session;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+
+  return null;
+}
+
 export function OtpForm() {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
@@ -89,7 +107,32 @@ export function OtpForm() {
         return;
       }
 
-      const user = await resolveProfile();
+      const session = await waitForSession();
+
+      if (!session) {
+        setError('Your session was created, but profile sync is still starting. Please verify again in a moment.');
+        return;
+      }
+
+      let user = null;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        try {
+          user = await resolveProfile();
+          break;
+        } catch (resolveError) {
+          if (!(resolveError instanceof Error) || !resolveError.message.includes('UNAUTHENTICATED')) {
+            throw resolveError;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      }
+
+      if (!user) {
+        setError('Signed in successfully, but we could not load your profile yet. Please retry once.');
+        return;
+      }
+
       sessionStorage.removeItem('otp_phone');
       if (user?.isFirstLogin) {
         router.push('/reset-password');

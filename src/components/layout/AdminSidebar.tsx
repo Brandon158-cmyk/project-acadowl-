@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { adminNavConfig, type NavItem } from '@/lib/navigation/adminNavConfig';
+import { Feature } from '@/lib/features/flags';
 import { useFeature } from '@/hooks/useFeature';
+import { useMe } from '@/hooks/useMe';
+import { canDo } from '@/lib/roles/matrix';
 import { cn } from '@/lib/utils/cn';
 
 interface AdminSidebarProps {
@@ -12,32 +15,54 @@ interface AdminSidebarProps {
   onClose: () => void;
 }
 
-function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavEntry({ item, pathname, depth = 0 }: { item: NavItem; pathname: string; depth?: number }) {
   const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-  const isFeatureEnabled = useFeature(item.feature!);
+  const feature = item.feature;
+  const isFeatureEnabled = useFeature(feature ?? Feature.STUDENTS);
+  const { user } = useMe();
+  const hasPermission = item.permission ? Boolean(user?.role && canDo(user.role, item.permission)) : true;
 
-  // If feature-gated and not enabled, don't render
-  if (item.feature && !isFeatureEnabled) return null;
+  if (feature && !isFeatureEnabled) {
+    return null;
+  }
+
+  if (item.permission && !hasPermission) {
+    return null;
+  }
+
+  if (item.requiresStaffProfile && !user?.staffId) {
+    return null;
+  }
 
   return (
-    <Link
-      href={item.href}
-      className={cn(
-        'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200',
-        isActive
-          ? 'bg-school-primary/10 text-school-primary'
-          : 'text-slate hover:bg-gray-100 hover:text-onyx',
-      )}
-    >
-      <item.icon
+    <div className={cn('space-y-1', depth > 0 && 'pl-4')}>
+      <Link
+        href={item.href}
         className={cn(
-          'h-5 w-5 shrink-0',
-          isActive ? 'text-school-primary' : 'text-slate group-hover:text-onyx',
+          'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200',
+          isActive
+            ? 'bg-school-primary/10 text-school-primary'
+            : 'text-slate hover:bg-gray-100 hover:text-onyx',
         )}
-        aria-hidden="true"
-      />
-      {item.label}
-    </Link>
+      >
+        <item.icon
+          className={cn(
+            'h-5 w-5 shrink-0',
+            isActive ? 'text-school-primary' : 'text-slate group-hover:text-onyx',
+          )}
+          aria-hidden="true"
+        />
+        <span>{item.label}</span>
+      </Link>
+
+      {item.children && item.children.length > 0 && (
+        <div className="space-y-1 border-l border-gray-200 pl-3">
+          {item.children.map((child) => (
+            <NavEntry key={child.href} item={child} pathname={pathname} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -78,7 +103,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Navigation */}
         <nav className="flex flex-col gap-1 p-4" aria-label="Admin navigation">
           {adminNavConfig.map((item) => (
-            <NavLink key={item.href} item={item} pathname={pathname} />
+            <NavEntry key={item.href} item={item} pathname={pathname} />
           ))}
         </nav>
       </aside>

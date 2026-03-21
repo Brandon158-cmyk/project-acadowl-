@@ -17,6 +17,24 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+async function waitForSession() {
+  const supabase = createSupabaseBrowserClient();
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      return session;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+
+  return null;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
@@ -41,7 +59,32 @@ export function LoginForm() {
         return;
       }
 
-      const user = await resolveProfile();
+      const session = await waitForSession();
+
+      if (!session) {
+        form.setError('root', { message: 'Your session was created, but profile sync is still starting. Please try again in a moment.' });
+        return;
+      }
+
+      let user = null;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        try {
+          user = await resolveProfile();
+          break;
+        } catch (resolveError) {
+          if (!(resolveError instanceof Error) || !resolveError.message.includes('UNAUTHENTICATED')) {
+            throw resolveError;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      }
+
+      if (!user) {
+        form.setError('root', { message: 'Signed in successfully, but we could not load your profile yet. Please retry once.' });
+        return;
+      }
+
       if (user?.isFirstLogin) {
         router.push('/reset-password');
       } else {

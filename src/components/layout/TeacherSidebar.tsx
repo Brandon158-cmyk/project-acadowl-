@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { teacherNavConfig } from '@/lib/navigation/teacherNavConfig';
 import { useFeature } from '@/hooks/useFeature';
+import { useMe } from '@/hooks/useMe';
 import { cn } from '@/lib/utils/cn';
 import type { NavItem } from '@/lib/navigation/teacherNavConfig';
 
@@ -16,8 +17,10 @@ interface TeacherSidebarProps {
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
   const isFeatureEnabled = useFeature(item.feature!);
+  const { user } = useMe();
 
   if (item.feature && !isFeatureEnabled) return null;
+  if (item.requiresStaffProfile && !user?.staffId) return null;
 
   return (
     <Link

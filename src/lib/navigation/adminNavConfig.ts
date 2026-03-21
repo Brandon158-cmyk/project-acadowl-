@@ -14,12 +14,15 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Feature } from '@/lib/features/flags';
+import { Permission } from '@/lib/roles/types';
 
 export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
   feature?: Feature;
+  permission?: Permission;
+  requiresStaffProfile?: boolean;
   children?: NavItem[];
 }
 
@@ -47,6 +50,7 @@ export const adminNavConfig: NavItem[] = [
     icon: BookOpen,
     children: [
       { label: 'Grades & Sections', href: '/academics/grades', icon: BookOpen },
+      { label: 'Sections', href: '/academics/sections', icon: GraduationCap },
       { label: 'Subjects', href: '/academics/subjects', icon: BookOpen },
       { label: 'Timetable', href: '/academics/timetable', icon: Calendar, feature: Feature.TIMETABLE },
     ],
@@ -56,6 +60,8 @@ export const adminNavConfig: NavItem[] = [
     href: '/attendance',
     icon: ClipboardCheck,
     feature: Feature.ATTENDANCE,
+    permission: Permission.MARK_ATTENDANCE,
+    requiresStaffProfile: true,
   },
   {
     label: 'Examinations',
@@ -103,6 +109,7 @@ export const adminNavConfig: NavItem[] = [
     href: '/settings',
     icon: Settings,
     children: [
+      { label: 'Academic Year', href: '/settings/academic-year', icon: Calendar },
       { label: 'School Profile', href: '/settings/profile', icon: Settings },
       { label: 'Branding', href: '/settings/branding', icon: Settings },
       { label: 'Features', href: '/settings/features', icon: Settings },

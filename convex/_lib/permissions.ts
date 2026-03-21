@@ -13,6 +13,7 @@ export enum Permission {
   MANAGE_ACADEMICS = 'MANAGE_ACADEMICS',
   MANAGE_FEES = 'MANAGE_FEES',
   MANAGE_SETTINGS = 'MANAGE_SETTINGS',
+  SEND_BULK_SMS = 'SEND_BULK_SMS',
 
   // Teacher level
   MARK_ATTENDANCE = 'MARK_ATTENDANCE',
@@ -61,6 +62,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.MANAGE_ACADEMICS,
     Permission.MANAGE_FEES,
     Permission.MANAGE_SETTINGS,
+    Permission.SEND_BULK_SMS,
     Permission.MARK_ATTENDANCE,
     Permission.ENTER_GRADES,
     Permission.VIEW_CLASS,
@@ -72,6 +74,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   deputy_head: [
     Permission.MANAGE_STAFF,
     Permission.MANAGE_ACADEMICS,
+    Permission.SEND_BULK_SMS,
     Permission.MARK_ATTENDANCE,
     Permission.ENTER_GRADES,
     Permission.VIEW_CLASS,

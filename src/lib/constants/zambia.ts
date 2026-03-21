@@ -19,3 +19,38 @@ export const PROVINCE_NAMES = Object.keys(PROVINCES);
 export function getDistrictsForProvince(province: string): string[] {
   return PROVINCES[province] ?? [];
 }
+
+export const ZAMBIA_SMS_PREFIX_MAP = {
+  airtel: ['0971', '0961', '260971', '260961'],
+  mtn: ['0976', '0966', '260976', '260966'],
+} as const;
+
+export type ZambiaSmsCarrier = keyof typeof ZAMBIA_SMS_PREFIX_MAP;
+
+export function normalizeZambianPhoneNumber(value: string) {
+  const digits = value.replace(/\D/g, '');
+
+  if (digits.startsWith('260')) {
+    return digits;
+  }
+
+  if (digits.startsWith('0')) {
+    return `260${digits.slice(1)}`;
+  }
+
+  return digits;
+}
+
+export function detectZambianSmsCarrier(value: string): ZambiaSmsCarrier | null {
+  const normalized = normalizeZambianPhoneNumber(value);
+
+  if (ZAMBIA_SMS_PREFIX_MAP.airtel.some((prefix) => normalized.startsWith(prefix))) {
+    return 'airtel';
+  }
+
+  if (ZAMBIA_SMS_PREFIX_MAP.mtn.some((prefix) => normalized.startsWith(prefix))) {
+    return 'mtn';
+  }
+
+  return null;
+}

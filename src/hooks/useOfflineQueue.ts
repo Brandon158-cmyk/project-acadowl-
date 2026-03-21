@@ -8,6 +8,8 @@ interface QueuedMutation {
   args: Record<string, unknown>;
   clientId: string;
   timestamp: number;
+  retryCount: number;
+  lastError?: string;
 }
 
 const STORAGE_KEY = 'acadowl_offline_queue';
@@ -15,27 +17,35 @@ const STORAGE_KEY = 'acadowl_offline_queue';
 // Manages an offline queue for mutations (primarily attendance)
 // Mutations must be idempotent and accept clientId for deduplication
 export function useOfflineQueue() {
-  const [isOnline, setIsOnline] = useState(true);
-  const [queue, setQueue] = useState<QueuedMutation[]>([]);
-  const isReplayingRef = useRef(false);
-
-  // Load queue from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setQueue(JSON.parse(stored));
-      }
-    } catch {
-      // Silently fail if localStorage is unavailable
+  const [isOnline, setIsOnline] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true;
     }
 
+    return navigator.onLine;
+  });
+  const [queue, setQueue] = useState<QueuedMutation[]>(() => {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? (JSON.parse(stored) as QueuedMutation[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isReplaying, setIsReplaying] = useState(false);
+  const isReplayingRef = useRef(false);
+
+  // Sync online/offline state on mount
+  useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    setIsOnline(navigator.onLine);
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -62,6 +72,7 @@ export function useOfflineQueue() {
         args: { ...args, clientId },
         clientId,
         timestamp: Date.now(),
+        retryCount: 0,
       };
       setQueue((prev) => [...prev, item]);
       return clientId;
@@ -74,9 +85,32 @@ export function useOfflineQueue() {
     setQueue((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
+  const markProcessed = useCallback((id: string) => {
+    setQueue((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const markFailed = useCallback((id: string, error: string) => {
+    setQueue((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              retryCount: item.retryCount + 1,
+              lastError: error,
+            }
+          : item,
+      ),
+    );
+  }, []);
+
   // Clear the entire queue
   const clearQueue = useCallback(() => {
     setQueue([]);
+  }, []);
+
+  const setReplayingState = useCallback((value: boolean) => {
+    isReplayingRef.current = value;
+    setIsReplaying(value);
   }, []);
 
   return {
@@ -85,7 +119,10 @@ export function useOfflineQueue() {
     queueLength: queue.length,
     enqueue,
     dequeue,
+    markProcessed,
+    markFailed,
     clearQueue,
-    isReplaying: isReplayingRef.current,
+    isReplaying,
+    setReplayingState,
   };
 }
