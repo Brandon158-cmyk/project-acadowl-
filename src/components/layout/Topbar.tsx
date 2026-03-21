@@ -1,38 +1,40 @@
-'use client';
+"use client";
 
-import { useQuery } from 'convex/react';
-import Link from 'next/link';
-import { Bell, Menu, LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { api } from '@/../convex/_generated/api';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { useMe } from '@/hooks/useMe';
-import { SchoolLogo } from '@/components/school/SchoolLogo';
+import { useQuery } from "convex/react";
+import Link from "next/link";
+import {
+  Bell,
+  Menu,
+  GraduationCap,
+  Terminal,
+  ChevronsUpDown,
+  Calendar,
+} from "lucide-react";
+import { api } from "@/../convex/_generated/api";
+import { useMe } from "@/hooks/useMe";
 
 interface TopbarProps {
-  schoolName?: string;
-  schoolLogoUrl?: string | null;
   onMenuToggle?: () => void;
 }
 
 function getNotificationsHref(role?: string) {
-  if (role === 'guardian') {
-    return '/home/notices';
+  if (role === "guardian") {
+    return "/home/notices";
   }
 
-  if (role === 'student') {
-    return '/portal/notices';
+  if (role === "student") {
+    return "/portal/notices";
   }
 
-  if (role === 'teacher' || role === 'class_teacher') {
-    return '/my-classes/notices';
+  if (role === "teacher" || role === "class_teacher") {
+    return "/my-classes/notices";
   }
 
-  if (role === 'driver') {
-    return '/route/notices';
+  if (role === "driver") {
+    return "/route/notices";
   }
 
-  return '/notifications';
+  return "/notifications";
 }
 
 function TopbarNotifications({ role }: { role?: string }) {
@@ -40,11 +42,15 @@ function TopbarNotifications({ role }: { role?: string }) {
   const notificationsHref = getNotificationsHref(role);
 
   return (
-    <Link href={notificationsHref} className="relative rounded-md p-1.5 text-text-secondary transition-all duration-150 hover:bg-surface-hover hover:text-text-primary" aria-label="Notifications">
+    <Link
+      href={notificationsHref}
+      className="relative rounded-md p-1.5 text-text-secondary transition-all duration-150 hover:bg-surface-hover hover:text-text-primary"
+      aria-label="Notifications"
+    >
       <Bell className="h-4 w-4" />
       {unreadNotifications && unreadNotifications > 0 ? (
         <span className="absolute 0.5 -top-0.5 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white">
-          {unreadNotifications > 99 ? '99+' : unreadNotifications}
+          {unreadNotifications > 99 ? "99+" : unreadNotifications}
         </span>
       ) : null}
     </Link>
@@ -52,45 +58,34 @@ function TopbarNotifications({ role }: { role?: string }) {
 }
 
 function TopbarAcademicContext() {
-  const currentAcademicYear = useQuery(api.schools.academicYears.getCurrentAcademicYear);
+  const currentAcademicYear = useQuery(
+    api.schools.academicYears.getCurrentAcademicYear,
+  );
   const currentTerm = useQuery(api.schools.terms.getCurrentTerm);
 
-  if (!currentAcademicYear && !currentTerm) {
-    return null;
-  }
+  if (!currentAcademicYear && !currentTerm) return null;
 
   return (
-    <div className="hidden items-center gap-1.5 lg:flex">
-      {currentAcademicYear ? (
-        <span className="rounded-md bg-info-bg px-2 py-0.5 text-[11px] font-medium text-info border border-info-border">
-          {currentAcademicYear.name}
+    <div className="flex h-10 items-center gap-2 rounded-full border border-[#22C55E] bg-[#DCFCE7] px-4 py-1 text-[13px] font-semibold text-[#15803D] shadow-sm transition-all hover:shadow-md cursor-pointer group">
+      <div className="flex items-center gap-2">
+        <Calendar size={14} className="text-[#15803D] opacity-80" />
+        <span className="tracking-tight leading-none">
+          {currentAcademicYear?.name ?? "2025/26"} •{" "}
+          {currentTerm?.name ?? "First Term"}
         </span>
-      ) : null}
-      {currentTerm ? (
-        <span className="rounded-md bg-success-bg px-2 py-0.5 text-[11px] font-medium text-success border border-success-border">
-          {currentTerm.name}
-        </span>
-      ) : null}
+      </div>
     </div>
   );
 }
 
-export function Topbar({ schoolName, schoolLogoUrl, onMenuToggle }: TopbarProps) {
-  const router = useRouter();
+export function Topbar({ onMenuToggle }: TopbarProps) {
   const { user } = useMe();
   const hasSchoolContext = Boolean(user?.school?._id);
 
-  const handleSignOut = async () => {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  };
-
   return (
-    <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-border-panel bg-white px-4">
-      {/* Left: menu toggle + school branding */}
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-50 flex h-14 w-full shrink-0 items-center justify-between border-b border-border-panel bg-white px-4">
+      {/* Left: Branding */}
+      <div className="flex items-center gap-4">
         {onMenuToggle && (
           <button
             type="button"
@@ -101,34 +96,46 @@ export function Topbar({ schoolName, schoolLogoUrl, onMenuToggle }: TopbarProps)
             <Menu className="h-4 w-4" />
           </button>
         )}
-        {schoolName && (
-          <div className="flex items-center gap-3">
-            <SchoolLogo logoUrl={schoolLogoUrl} schoolName={schoolName} size="sm" />
-            <span className="hidden text-[14px] font-semibold text-text-primary sm:block tracking-tight">
-              {schoolName}
-            </span>
-            {hasSchoolContext ? <TopbarAcademicContext /> : null}
+        <Link href="/" className="flex items-center gap-2 group shrink-0">
+          <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-accent transition-transform group-hover:scale-105 shadow-sm">
+            <GraduationCap size={16} className="text-white" />
           </div>
-        )}
+          <span className="text-[15px] font-bold text-text-primary tracking-tight">
+            Acadowl
+          </span>
+        </Link>
+
+        {/* Academic Context Pill moved closer to Logo */}
+        <div className="hidden lg:block">
+          <TopbarAcademicContext />
+        </div>
       </div>
 
       {/* Right: notifications + user menu */}
       <div className="flex items-center gap-2">
-        {hasSchoolContext ? <TopbarNotifications role={user?.role} /> : null}
+        <div className="flex items-center gap-2 pr-2">
+          <button className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium text-text-secondary hover:bg-surface-hover transition-colors">
+            Ask AI
+          </button>
+          <button className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium text-text-secondary hover:bg-surface-hover transition-colors">
+            Support
+          </button>
+        </div>
+
+        {hasSchoolContext && <TopbarNotifications role={user?.role} />}
 
         <div className="flex items-center gap-3 border-l border-border-inner pl-3 ml-1">
           <div className="hidden text-right lg:block">
-            <p className="text-[13px] font-medium text-text-primary leading-none">{user?.name ?? 'User'}</p>
-            <p className="mt-0.5 text-[11px] text-text-secondary capitalize leading-none">{user?.role?.replace('_', ' ') ?? ''}</p>
+            <p className="text-[13px] font-medium text-text-primary leading-none">
+              {user?.name ?? "User"}
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="rounded-md p-1.5 text-text-secondary hover:bg-surface-hover hover:text-error transition-all duration-150"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="h-8 w-8 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center overflow-hidden">
+            {/* Fallback avatar */}
+            <span className="text-[10px] font-bold text-accent">
+              {user?.name?.[0].toUpperCase()}
+            </span>
+          </div>
         </div>
       </div>
     </header>
