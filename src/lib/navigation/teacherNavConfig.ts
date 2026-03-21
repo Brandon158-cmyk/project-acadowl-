@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   ClipboardCheck,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 import { Feature } from '@/lib/features/flags';
@@ -25,6 +26,13 @@ export const teacherNavConfig: NavItem[] = [
     href: '/attendance',
     icon: ClipboardCheck,
     feature: Feature.ATTENDANCE,
+    requiresStaffProfile: true,
+  },
+  {
+    label: 'Marks Entry',
+    href: '/exams/marks-entry',
+    icon: BookOpen,
+    feature: Feature.ECZ_EXAMS,
     requiresStaffProfile: true,
   },
 ];

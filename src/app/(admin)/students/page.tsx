@@ -10,6 +10,24 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton';
+import { BulkImportDialog } from './BulkImportDialog';
+
+const ENROLLMENT_STYLE: Record<string, string> = {
+  active: 'bg-success/10 text-success',
+  suspended: 'bg-amber-100 text-amber-800',
+  expelled: 'bg-error/10 text-error',
+  withdrawn: 'bg-error/10 text-error',
+  transferred: 'bg-info/10 text-info',
+  graduated: 'bg-info/10 text-info',
+};
+
+function EnrollmentBadge({ status }: { status: string }) {
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ENROLLMENT_STYLE[status] ?? 'bg-gray-100 text-gray-700'}`}>
+      {status.replace('_', ' ')}
+    </span>
+  );
+}
 
 export default function StudentsPage() {
   const [search, setSearch] = useState('');
@@ -46,13 +64,16 @@ export default function StudentsPage() {
         title="Students"
         description="Manage student enrolment, placement, and guardian-linked records for the current school."
         actions={
-          <Link
-            href="/students/enroll"
-            className="inline-flex items-center gap-2 rounded-lg bg-school-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-crimson-dark active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-            Enroll student
-          </Link>
+          <div className="flex items-center gap-3">
+            <BulkImportDialog />
+            <Link
+              href="/students/enroll"
+              className="inline-flex items-center gap-2 rounded-lg bg-school-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-crimson-dark active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              Enroll student
+            </Link>
+          </div>
         }
       />
 
@@ -174,9 +195,7 @@ export default function StudentsPage() {
                           {primaryGuardian ? `${primaryGuardian.firstName} ${primaryGuardian.lastName}` : 'Not linked'}
                         </td>
                         <td className="p-4 text-right">
-                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium capitalize text-blue-800">
-                            {student.enrollmentStatus.replace('_', ' ')}
-                          </span>
+                          <EnrollmentBadge status={student.enrollmentStatus} />
                         </td>
                       </tr>
                     );

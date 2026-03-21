@@ -250,7 +250,102 @@ export const transferStudentSection = mutation({
         createdAt: Date.now(),
       });
 
-      return { success: true };
+    });
+  },
+});
+
+export const bulkImportStudents = mutation({
+  args: {
+    students: v.array(
+      v.object({
+        firstName: v.string(),
+        lastName: v.string(),
+        dateOfBirth: v.optional(v.number()),
+        gender: v.union(v.literal('male'), v.literal('female'), v.literal('other')),
+        gradeId: v.id('grades'),
+        sectionId: v.id('sections'),
+        guardianFirstName: v.string(),
+        guardianLastName: v.string(),
+        guardianPhone: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId, role, userId }) => {
+      requirePermission(role, Permission.MANAGE_STUDENTS);
+      const { school, schoolId: scopedSchoolId } = await getStudentEnabledSchool(ctx, schoolId);
+
+      const results = {
+        successCount: 0,
+        errorCount: 0,
+        errors: [] as string[],
+      };
+
+      const now = Date.now();
+
+      for (let i = 0; i < args.students.length; i++) {
+        const row = args.students[i];
+        try {
+          const { section } = await ensureGradeAndSection(ctx, scopedSchoolId, row.gradeId, row.sectionId);
+          if (!section) throw new Error('Invalid section');
+
+          const sectionStudents = await ctx.db
+            .query('students')
+            .withIndex('by_section', (q) => q.eq('currentSectionId', section._id))
+            .collect();
+
+          if (sectionStudents.length >= section.maxStudents) {
+            throw new Error('Section is at capacity');
+          }
+
+          const sequence = await nextCounterValue(ctx, scopedSchoolId, 'student_number');
+          const studentNumber = formatStudentNumber(school, sequence);
+
+          const guardianId = await resolveGuardianLink(ctx, scopedSchoolId, {
+            firstName: row.guardianFirstName,
+            lastName: row.guardianLastName,
+            phone: row.guardianPhone,
+            relationship: 'parent',
+            isPrimary: true,
+          });
+
+          const studentId = await ctx.db.insert('students', {
+            schoolId: scopedSchoolId,
+            firstName: row.firstName.trim(),
+            lastName: row.lastName.trim(),
+            dateOfBirth: row.dateOfBirth ?? now,
+            gender: row.gender,
+            studentNumber,
+            currentGradeId: row.gradeId,
+            currentSectionId: row.sectionId,
+            enrollmentStatus: 'active',
+            enrolledAt: now,
+            guardianLinks: [{ guardianId, relationship: 'parent', isPrimary: true }],
+            createdAt: now,
+            updatedAt: now,
+          });
+
+          await ctx.db.insert('sectionHistory', {
+            schoolId: scopedSchoolId,
+            studentId,
+            gradeId: row.gradeId,
+            sectionId: section._id,
+            academicYearId: school.currentAcademicYearId,
+            termId: school.currentTermId,
+            reason: 'Bulk import',
+            effectiveDate: now,
+            createdBy: userId,
+            createdAt: now,
+          });
+
+          results.successCount++;
+        } catch (error) {
+          results.errorCount++;
+          results.errors.push(`Row ${i + 1} (${row.firstName} ${row.lastName}): ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
+      return results;
     });
   },
 });

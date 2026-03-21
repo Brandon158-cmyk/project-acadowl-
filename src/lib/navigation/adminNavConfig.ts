@@ -11,6 +11,7 @@ import {
   Library,
   MonitorPlay,
   ClipboardCheck,
+  BarChart3,
   type LucideIcon,
 } from 'lucide-react';
 import { Feature } from '@/lib/features/flags';
@@ -57,11 +58,13 @@ export const adminNavConfig: NavItem[] = [
   },
   {
     label: 'Attendance',
-    href: '/attendance',
+    href: '/attendance/analytics',
     icon: ClipboardCheck,
     feature: Feature.ATTENDANCE,
-    permission: Permission.MARK_ATTENDANCE,
-    requiresStaffProfile: true,
+    children: [
+      { label: 'Analytics', href: '/attendance/analytics', icon: BarChart3 },
+      { label: 'Mark Attendance', href: '/attendance', icon: ClipboardCheck, permission: Permission.MARK_ATTENDANCE, requiresStaffProfile: true },
+    ],
   },
   {
     label: 'Examinations',

@@ -447,6 +447,8 @@ function TeacherAttendanceContent() {
                                   key={option}
                                   type="button"
                                   onClick={() => setStudentStatus(student._id, option)}
+                                  aria-pressed={status === option}
+                                  aria-label={`Mark as ${option}`}
                                   className={status === option ? 'rounded-lg bg-school-primary px-3 py-2 text-xs font-medium uppercase tracking-wide text-white shadow-sm transition-all duration-200 hover:bg-crimson-dark active:scale-95' : 'rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium uppercase tracking-wide text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 active:scale-95'}
                                 >
                                   {option}

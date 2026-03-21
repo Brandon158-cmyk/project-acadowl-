@@ -33,7 +33,7 @@ export default function StudentProfilePage() {
     );
   }
 
-  const { student, grade, section, guardians, sectionHistory, attendanceSummary, examAverage } = profile;
+  const { student, grade, section, guardians, sectionHistory, attendanceSummary, examAverage, recentSessions } = profile;
   const sameGradeSections = enrollmentData.sections.filter(
     (entry) => entry.gradeId === student.currentGradeId && entry._id !== student.currentSectionId,
   );
@@ -97,7 +97,12 @@ export default function StudentProfilePage() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Status</p>
-                <p className="mt-1 text-sm capitalize text-gray-800">{student.enrollmentStatus.replace('_', ' ')}</p>
+                <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                  student.enrollmentStatus === 'active' ? 'bg-success/10 text-success' :
+                  student.enrollmentStatus === 'suspended' ? 'bg-amber-100 text-amber-800' :
+                  ['expelled', 'withdrawn'].includes(student.enrollmentStatus) ? 'bg-error/10 text-error' :
+                  'bg-info/10 text-info'
+                }`}>{student.enrollmentStatus.replace('_', ' ')}</span>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Date of birth</p>
@@ -168,6 +173,31 @@ export default function StudentProfilePage() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Exam average</p>
                 <p className="mt-2 text-2xl font-semibold text-onyx">{examAverage === null ? '—' : `${examAverage.toFixed(1)}%`}</p>
                 <p className="mt-1 text-sm text-gray-600">Calculated from recorded exam results.</p>
+              </div>
+            </div>
+            
+            <div className="mt-6 border-t border-gray-100 pt-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">Exam Sessions & Report Cards</h3>
+              <div className="space-y-3">
+                {recentSessions.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">No exams recorded yet.</p>
+                ) : (
+                  recentSessions.map((session) => (
+                    <div key={session._id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-4 transition-colors hover:bg-gray-100">
+                      <div>
+                        <p className="font-medium text-gray-900">{session.name}</p>
+                        <p className="text-sm text-gray-600">{session.termName}</p>
+                      </div>
+                      <Link
+                        href={`/students/${studentId}/report-card/${session._id}`}
+                        className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-school-primary border border-gray-300 shadow-sm transition-colors hover:bg-gray-50"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        View Report Card
+                      </Link>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

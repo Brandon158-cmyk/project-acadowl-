@@ -151,6 +151,21 @@ export const getStudentProfile = query({
           ? examResults.reduce((sum, result) => sum + (result.marksObtained / result.maxMarks) * 100, 0) / examResults.length
           : null;
 
+      const sessionIds = [...new Set(examResults.map((r) => r.examSessionId))];
+      const sessions = await Promise.all(sessionIds.map((id) => ctx.db.get(id)));
+      const terms = await Promise.all(sessions.filter(Boolean).map((s) => ctx.db.get(s!.termId)));
+      const termMap = Object.fromEntries(terms.filter(Boolean).map((t) => [t!._id, t!.name]));
+
+      const recentSessions = sessions
+        .filter(Boolean)
+        .map((s) => ({
+          _id: s!._id,
+          name: s!.name,
+          termName: termMap[s!.termId] ?? 'Unknown Term',
+          createdAt: s!.createdAt,
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt);
+
       return {
         school,
         student,
@@ -160,6 +175,7 @@ export const getStudentProfile = query({
         sectionHistory: sectionHistory.sort((a, b) => b.effectiveDate - a.effectiveDate),
         attendanceSummary,
         examAverage,
+        recentSessions,
       };
     });
   },

@@ -1,343 +1,556 @@
-# Acadowl Design System — "Veritas Nexus" v2.0
-> **Codename: Veritas Nexus** replaces all references to any specific external institution.  
-> This document is the **absolute source of truth** for developers, UX engineers, and AI agents building on the Acadowl platform.
+# Acadowl Design System — "Veritas Nexus" v4.1
+> **Codename: Veritas Nexus — Compact Clarity Edition**
+> This document is the **absolute source of truth** for all developers, UX engineers, and AI agents building on the Acadowl platform.
+> v4.1 supersedes all previous versions. Every visual decision in this document is derived directly from the Convex dashboard design system.
 
 ---
 
 ## Foreword
 
-> *"Designing for a tier-1 academic institution requires more than aesthetic refinement — it demands **Cognitive Elegance**. Administrators, educators, and students interact with this platform daily, processing dense, high-stakes data. Our mandate is to reduce administrative cognitive load while projecting the gravitas of an established academic legacy. Every pixel, easing curve, and typographic scale in Veritas Nexus has been rigorously tested against WCAG 2.1 AA standards and high-density data requirements. This is not just a UI kit — it is a behavioral architecture."*
->
-> — Lead UX Architect, Global Academic Systems Taskforce
+> *"The best administrative UI is invisible. The user sees their data, not the interface. Veritas Nexus v4.1 achieves this through warm neutrals, Inter at small sizes, and a border system that defines every surface without competing with content. The page background is warm off-white. Every white panel that sits on it gets a single, clearly-warm 1px border. That border — #D0CBC4 — is the single most important design decision in this system. It is visible enough to provide definition, warm enough to feel considered, and never harsh enough to draw attention to itself."*
 
 ---
 
-## 1. Design Philosophy & UX Principles
+## 1. Design Philosophy
 
-Acadowl is built on three non-negotiable pillars:
+### 1.1 Surfaces and Their Borders
+**Every white surface that sits on the page background gets a full 1px border on all four sides.** This is non-negotiable. A card without a border on the `#EEECEA` background looks broken, not minimal. Borders are structure, not decoration.
 
-### 1.1 Inclusive by Default
-Accessibility is never an afterthought. Contrast ratios **must** pass WCAG AAA for all text. Focus rings must always be visible — never suppressed. Screen reader ARIA labels are **mandatory** for every icon-only button or interactive element.
+### 1.2 Warm, Not Cool
+Every neutral — background, border, muted text — pulls slightly warm (toward brown/tan), never cool (toward blue-gray). The system reads as paper and ink, not screen and chrome.
 
-### 1.2 Frictionless Efficiency
-Design for keyboard navigation first. Minimize clicks for repetitive administrative tasks (e.g., marking attendance). Visual hierarchies must guide the eye directly to the primary action without scanning. Dense data views must remain scannable at a glance.
+### 1.3 Flat and Defined by Borders
+Zero decorative shadows. All depth is communicated through the contrast between `#EEECEA` (background) and `#FFFFFF` (surface), with `#D0CBC4` borders providing crisp edge definition.
 
-### 1.3 Institutional Trust
-Avoid playful or overly trendy UI patterns. Use solid borders, clear typography, and definitive feedback states. The system must feel as permanent and reliable as the institution it serves — structured, deliberate, and authoritative.
+### 1.4 One Accent Color
+Deep Indigo `#3730A3` is the only interactive color. Primary buttons, active navigation, focus rings, and links. Nothing else is colored.
+
+### 1.5 Compact Information Density
+Base font size is 13px. Button height ~32px. Table rows ~38px. This is a productivity tool — every pixel of vertical space is valuable.
 
 ---
 
 ## 2. Color System
 
-### 2.1 Core Brand Palette
+### 2.1 Core Palette
 
-| Token Name | Hex | RGB | Usage |
+| Token | Hex | RGB | Usage |
 |---|---|---|---|
-| `school-primary` / Veritas Crimson | `#A51C30` | `165, 28, 48` | Primary brand color, CTA buttons, key active states |
-| `crimson-dark` | `#7A1523` | `122, 21, 35` | Hover states on primary, deep active navigation, high-emphasis backgrounds |
-| `parchment` | `#F9F8F6` | `249, 248, 246` | Main application page background |
-| `onyx` | `#111827` | `17, 24, 39` | Primary body text, high-contrast UI elements, structural sidebars |
-| `slate` | `#6B7280` | `107, 114, 128` | Secondary text, borders, inactive states, placeholder text |
-| Gold Leaf | `#D4AF37` | `212, 175, 55` | Accents, awards, premium feature highlights, warning-adjacent states |
+| `app-bg` | `#EEECEA` | `238, 236, 234` | Page shell background — warm off-white. Every screen. |
+| `surface` | `#FFFFFF` | `255, 255, 255` | All cards, panels, sidebars, modals, table bodies, inputs |
+| `surface-subtle` | `#F4F1EE` | `244, 241, 238` | Table thead, hover states within surfaces |
+| `surface-hover` | `#EDEAE6` | `237, 234, 230` | Hovered rows, nav item hover |
+| `text-primary` | `#1A1A1A` | `26, 26, 26` | All primary text |
+| `text-secondary` | `#6B6B6B` | `107, 107, 107` | Muted labels, timestamps, inactive nav |
+| `text-tertiary` | `#9E9E9E` | `158, 158, 158` | Placeholder text, disabled labels |
+| `accent` | `#3730A3` | `55, 48, 163` | Primary buttons, active nav, links, focus rings |
+| `accent-hover` | `#2E27A0` | `46, 39, 160` | Hover on accent |
+| `accent-bg` | `#EEF2FF` | `238, 242, 255` | Active nav background, accent tint areas |
+| `accent-text` | `#4338CA` | `67, 56, 202` | Link text, ghost button text |
 
-### 2.2 Semantic Feedback Colors
+---
 
-| Role | Foreground Hex | Background Hex | Usage |
-|---|---|---|---|
-| Success (Emerald) | `#059669` | `#ecfdf5` | Confirmations, positive trends, successful saves |
-| Warning (Amber) | `#D97706` | `#fffbeb` | Destructive warnings, pending states, missing data |
-| Error (Rose) | `#E11D48` | `#fff1f2` | Failed actions, critical system errors, destructive actions |
-| Info (Blue) | `#2563EB` | `#eff6ff` | System updates, neutral information, helpful tips |
+### 2.2 The Border System — The Most Important Section
 
-### 2.3 Color Rules (Non-Negotiable)
+There are **exactly three border values** in this system. Each has a defined scope. Using the wrong one is a design violation.
 
-- ✅ Use `#F9F8F6` (Parchment) as the main page background — it reduces optical fatigue compared to pure white.
-- ✅ Use `#111827` (Onyx) for structural sidebars and primary text — never pure black `#000000`.
-- ✅ Use `#A51C30` (Veritas Crimson) only for the primary action in any given context.
-- ❌ **Never** use pure `#000000` or pure `#FFFFFF` for large backgrounds.
-- ❌ **Never** use Gold Leaf as a primary CTA color — it is strictly an accent.
-- ❌ Semantic colors (Success, Warning, Error, Info) must only be used for their designated feedback contexts.
+```
+border-panel:  1px solid #D0CBC4   ← Panel / card outlines
+border-inner:  1px solid #E5DFD8   ← Dividers WITHIN a surface
+border-row:    1px solid #EDEAE6   ← Table row dividers only
+```
+
+---
+
+#### `border-panel` — `#D0CBC4`
+
+**The primary border. Used on every white surface sitting on `app-bg`.**
+
+This border is warm, medium-gray. It is intentionally and clearly visible — not ghosted. It defines where each white surface begins and ends against the warm off-white background. Without it, the UI looks unfinished.
+
+Applies to: cards, panels, modals, **input fields**, dropdown menus, the main content wrapper, filter chips, sidebar (`border-r`), topbar (`border-b`), the table wrapper `<div>`, region selector buttons, search inputs.
+
+```css
+/* Tailwind */  border border-[#D0CBC4]
+/* CSS      */  border: 1px solid #D0CBC4;
+/* Sidebar  */  border-right: 1px solid #D0CBC4;
+/* Topbar   */  border-bottom: 1px solid #D0CBC4;
+```
+
+---
+
+#### `border-inner` — `#E5DFD8`
+
+**Internal dividers within surfaces — white-on-white separation.**
+
+Lighter than `border-panel` because it sits inside a white surface. It only needs to suggest a section break, not define an edge against a contrasting background.
+
+Applies to: card header bottom border, toolbar bottom border within a card, table `<thead>` bottom border, form group separators, the pagination section top border.
+
+```css
+/* Tailwind */  border-b border-[#E5DFD8]
+/* CSS      */  border-bottom: 1px solid #E5DFD8;
+```
+
+---
+
+#### `border-row` — `#EDEAE6`
+
+**Table row dividers only.** The lightest border in the system.
+
+Applies to: `<tbody>` row dividers exclusively.
+
+```css
+/* Tailwind */  divide-y divide-[#EDEAE6]
+/* CSS      */  border-bottom: 1px solid #EDEAE6;
+```
+
+---
+
+#### Border Decision Chart
+
+```
+WHAT YOU ARE BORDERING                 TOKEN          HEX
+──────────────────────────────────────────────────────────────
+Card outline                        →  border-panel   #D0CBC4
+Panel / main content area outline   →  border-panel   #D0CBC4
+Sidebar right edge                  →  border-panel   #D0CBC4
+Topbar bottom edge                  →  border-panel   #D0CBC4
+Input field border (all states)     →  border-panel   #D0CBC4
+Dropdown menu border                →  border-panel   #D0CBC4
+Filter chip border                  →  border-panel   #D0CBC4
+Modal border                        →  border-panel   #D0CBC4
+Search input border                 →  border-panel   #D0CBC4
+Region selector button border       →  border-panel   #D0CBC4
+──────────────────────────────────────────────────────────────
+Card header bottom divider          →  border-inner   #E5DFD8
+Toolbar bottom divider              →  border-inner   #E5DFD8
+Form section separator              →  border-inner   #E5DFD8
+Table <thead> bottom border         →  border-inner   #E5DFD8
+Pagination section top border       →  border-inner   #E5DFD8
+──────────────────────────────────────────────────────────────
+Table <tbody> row dividers          →  border-row     #EDEAE6
+──────────────────────────────────────────────────────────────
+```
+
+#### Border Rules (Non-Negotiable)
+
+- ✅ **Every white surface on `app-bg`** → always has `border-panel` on all four sides
+- ✅ **Sidebar** → `border-r` only, using `border-panel`
+- ✅ **Topbar** → `border-b` only, using `border-panel`
+- ✅ **Inputs are surfaces** → they get `border-panel`, not a lighter value
+- ❌ **Never** use Tailwind's default `border-gray-200` or `border-gray-300` — too cool/blue
+- ❌ **Never** omit the border on a white surface sitting on `app-bg`
+- ❌ **Never** use `border-2` anywhere
+- ❌ **Never** mix border tokens — each has one purpose
+
+---
+
+### 2.3 Semantic Feedback Colors
+
+| Role | Text | Background | Border | Usage |
+|---|---|---|---|---|
+| Success | `#15803D` | `#F0FDF4` | `#BBF7D0` | Active badges, saved states |
+| Warning | `#B45309` | `#FFFBEB` | `#FDE68A` | Pending, missing data |
+| Error | `#BE123C` | `#FFF1F2` | `#FECDD3` | Failures, validation |
+| Info | `#1D4ED8` | `#EFF6FF` | `#BFDBFE` | System notices |
+
+### 2.4 Status Badge Colors
+
+| Status | Background | Text |
+|---|---|---|
+| Active / Live | `#F0FDF4` | `#15803D` |
+| Pending | `#FFFBEB` | `#B45309` |
+| Suspended / Error | `#FFF1F2` | `#BE123C` |
+| Inactive / Archived | `#F3F4F6` | `#6B6B6B` |
+| Development env | `#F0FDF4` | `#15803D` |
 
 ---
 
 ## 3. Typography
 
-Acadowl uses a **dual-font system**:
+### 3.1 Font Family
 
-- **Playfair Display** (Serif) — establishes academic authority for all Display and Heading levels. Used only for headings.
-- **Inter** (Sans-serif) — ensures maximum legibility for dense data, body copy, inputs, and UI elements.
+**Inter is the sole typeface for the entire system.** No serif. No dual-font split. One typeface only.
 
-### 3.1 Type Scale
+```css
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+```
 
-| Role | Tailwind Class | Size | Line Height | Font & Weight | Letter Spacing |
+Inter is engineered specifically for screen legibility at small sizes (11–14px). Its optical metrics, apertures, and stroke contrast are tuned exactly for dense, data-heavy interfaces — which is precisely what Acadowl is. At 13px it is more readable than any other general-purpose typeface.
+
+**Loading in Next.js:**
+```js
+import { Inter } from 'next/font/google'
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+```
+
+**For monospaced content** (IDs, slugs, code, terminal output):
+```css
+font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+```
+
+---
+
+### 3.2 Type Scale
+
+All sizes are **px, not rem**. Lock to px for compact tool UIs.
+
+| Role | Size | Weight | Color Token | Letter-spacing | Usage |
 |---|---|---|---|---|---|
-| Display 2 | `text-6xl` | 3.75rem / 60px | 1.1 | Playfair Display, SemiBold (600) | `-0.02em` |
-| Display 1 | `text-5xl` | 3rem / 48px | 1.1 | Playfair Display, SemiBold (600) | `-0.02em` |
-| Heading 1 | `text-4xl` | 2.25rem / 36px | 1.2 | Playfair Display, SemiBold (600) | `-0.01em` |
-| Heading 2 | `text-3xl` | 1.875rem / 30px | 1.2 | Playfair Display, SemiBold (600) | `normal` |
-| Heading 3 | `text-2xl` | 1.5rem / 24px | 1.3 | Playfair Display, SemiBold (600) | `normal` |
-| Heading 4 | `text-xl` | 1.25rem / 20px | 1.4 | Inter, SemiBold (600) | `normal` |
-| Body Large | `text-lg` | 1.125rem / 18px | 1.6 | Inter, Regular/Medium (400–500) | `normal` |
-| Body Base | `text-base` | 1rem / 16px | 1.6 | Inter, Regular/Medium (400–500) | `normal` |
-| Body Small | `text-sm` | 0.875rem / 14px | 1.5 | Inter, Regular/Medium (400–500) | `normal` |
-| Caption / Label | `text-xs` | 0.75rem / 12px | 1.5 | Inter, Medium/SemiBold (500–600) | `+0.02em` |
-
-### 3.2 Typography Rules
-
-- **Measure**: Keep body text line lengths between 60–80 characters for optimal readability.
-- **Tracking**: Use `tracking-tight` for large serif headings; use `tracking-wider` on uppercase UI labels and table column headers.
-- **Antialiasing**: Always apply `antialiased` class to the root `<body>` tag.
-- **Heading font**: Playfair Display is exclusively for visual hierarchy. Never use it for body text, form labels, table cells, or inputs.
-
-### 3.3 Typography Anti-Patterns
-
-- ❌ Never use Playfair Display for body text, input fields, data tables, or captions.
-- ❌ Do not use font weights below 400 (Regular) — it degrades contrast and legibility.
-- ❌ Never center-align paragraphs longer than 3 lines.
+| Page Title | `18px` | `600` | `text-primary` | `-0.01em` | Main `<h1>` — one per page |
+| Section Heading | `15px` | `600` | `text-primary` | `normal` | Card headers, modal titles |
+| Body Base | `14px` | `400` | `text-primary` | `normal` | Primary descriptions |
+| Body Dense | `13px` | `400` | `text-primary` | `normal` | **Default**: table cells, sidebar items, form fields, most UI text |
+| Form Label | `12px` | `500` | `text-secondary` | `normal` | All form field labels |
+| Caption | `12px` | `400` | `text-secondary` | `normal` | Timestamps, secondary metadata |
+| Table Header `<th>` | `12px` | `500` | `text-secondary` | `+0.04em` | Always uppercase + tracking |
+| Badge / Chip | `11px` | `500` | contextual | `+0.02em` | Status badges, env chips |
+| Mono ID | `12px` | `400` | `text-secondary` | `normal` | Document IDs, slugs, reference codes |
 
 ---
 
-## 4. Spatial System & Grid
+### 3.3 Hierarchy Rule
 
-### 4.1 Baseline Grid
+**Hierarchy is built through weight and color, not size.**
 
-Acadowl strictly adheres to an **8pt baseline grid**. All margins, paddings, component heights, and gap values must be multiples of **4px or 8px**. This mathematical rhythm creates subconscious order across every screen.
+A page title at `18px` is only 4–5px larger than body at `13px`. Visual distinction comes from `font-weight: 600` vs `400`, and `text-primary` vs `text-secondary`. Do not use large sizes to create hierarchy — this is the single biggest difference from v3 and the source of the compact developer-tool feel.
 
-### 4.2 Spacing Scale
+### 3.4 Rules
 
-| Tailwind Token | px Value | rem Value | Primary Usage |
-|---|---|---|---|
-| `p-1` / `gap-1` | 4px | 0.25rem | Micro: icon-to-label gaps, inner badge spacing |
-| `p-2` / `gap-2` | 8px | 0.5rem | Tight: dense table inner padding, small chips |
-| `p-3` / `gap-3` | 12px | 0.75rem | Compact: small input padding, badge padding |
-| `p-4` / `gap-4` | 16px | 1rem | Standard: buttons, inputs, list items |
-| `p-6` / `gap-6` | 24px | 1.5rem | Cards: standard card padding, section gaps |
-| `p-8` / `gap-8` | 32px | 2rem | Large cards, major section separators |
-| `p-12` | 48px | 3rem | Layout: page-level margins and spacing |
-| `p-16` | 64px | 4rem | Hero padding, major layout landmarks |
-
-### 4.3 12-Column Layout Grid
-
-The application shell uses a **fluid 12-column grid** with fixed gutters.
-
-- **Max Width**: Constrain main content areas to `max-w-6xl` (1152px) or `max-w-7xl` (1280px). This prevents infinite horizontal stretching on ultrawide monitors.
-- **Gutters**: Use `gap-6` (24px) for desktop grid columns, scaling to `gap-4` (16px) on mobile.
-- **Page Margins**: Always use `p-6 md:p-8` as the outer page wrapper padding to provide visual breathing room.
+- ✅ `antialiased` on root `<body>` always
+- ✅ `font-mono` for all IDs, slugs, reference codes
+- ✅ `<th>` cells: the only place for `uppercase` + `tracking-wider`
+- ❌ Never `text-2xl` or larger in any admin context
+- ❌ Never font-weight below `400`
+- ❌ Never center-align table or body text
 
 ---
 
-## 5. Elevation & Depth Architecture
+## 4. Spatial System
 
-Acadowl employs a **"Tactile Flat"** aesthetic. Structure is defined primarily through subtle borders (`border border-gray-200`) rather than decoration. Shadows are reserved strictly for interactive or elevated z-index elements.
+### 4.1 Spacing Scale
 
-### 5.1 Border Radius Tokens
+| Token | px | Primary Usage |
+|---|---|---|
+| `gap-0.5` | `2px` | Micro: icon-to-label inside badges |
+| `gap-1` | `4px` | Badge internal padding |
+| `gap-1.5` | `6px` | Button icon-to-text gap |
+| `gap-2` | `8px` | Dense table cell padding, tight form gaps |
+| `gap-3` | `12px` | Compact padding, nav item gap |
+| `gap-4` | `16px` | Standard element spacing |
+| `gap-5` | `20px` | Standard card padding |
+| `gap-6` | `24px` | Section-to-section gap on a page |
+| `gap-8` | `32px` | Major page-level separation |
 
-| Token | Size | px | Usage |
-|---|---|---|---|
-| `rounded-md` | Medium | 6px | Checkboxes, small badges, inner icon containers |
-| `rounded-lg` | Large | 8px | **Standard default**: buttons, form inputs, dropdown menus |
-| `rounded-xl` | Extra Large | 12px | Data cards, widgets, small modals |
-| `rounded-2xl` | 2X Large | 16px | Large layout blocks, main content wrappers, page sections |
+### 4.2 Page Layout
 
-### 5.2 Shadow Hierarchy
+```
+Page outer padding:   p-6 (24px all sides)
+Content max-width:    max-w-7xl (1280px)
+Sidebar width:        240px fixed
+Topbar height:        48px (h-12)
+Grid column gap:      gap-4 (16px)
+Section gap:          gap-6 (24px)
+Standard card body:   p-5 (20px)
+Large card sections:  p-6 (24px)
+```
 
-| Tailwind Class | Usage |
+---
+
+## 5. Elevation & Shadows
+
+### 5.1 Two-Layer System
+
+```
+Layer 0 — Page background:  #EEECEA  (warm off-white)
+Layer 1 — All surfaces:     #FFFFFF  + border: 1px solid #D0CBC4
+```
+
+The contrast between background and white surface, defined by the warm border, is the entire depth system. No shadows on any layer 1 element.
+
+### 5.2 Shadow Rules
+
+| Usage | Class |
 |---|---|
-| `shadow-sm` | Default state for all cards, buttons, and inputs. Always pair with `border border-gray-200`. |
-| `shadow-md` | Hover states for interactive cards, small dropdowns, tooltips. |
-| `shadow-lg` | Modals, dialogs, floating command palettes. Indicates the highest z-index layer. |
+| Cards, inputs, panels, buttons (default) | `shadow-none` |
+| Primary button only | `shadow-sm` |
+| Dropdowns, tooltips, floating menus | `shadow-md` |
+| Modals and dialogs | `shadow-lg` |
 
-> **Rule**: Never apply `shadow-lg` to non-elevated elements. Shadows must communicate z-index, not decoration.
+### 5.3 Border Radius
+
+| Token | px | Usage |
+|---|---|---|
+| `rounded` | `4px` | Badges, chips, tiny tags |
+| `rounded-md` | `6px` | Buttons, inputs, small dropdowns |
+| `rounded-lg` | `8px` | Cards, panels, modals, table wrappers |
+| `rounded-xl` | `12px` | Large project cards, feature panels |
+| `rounded-full` | `9999px` | Toggle-style tab group selectors |
 
 ---
 
 ## 6. Component Anatomy
 
-Interactive elements must be highly visible, accessible, and forgiving. Buttons and inputs form the administrative backbone.
+### 6.1 Cards and Panels
 
-### 6.1 Button Hierarchy
+```html
+<div class="bg-white border border-[#D0CBC4] rounded-lg">
+  <!-- Header: uses border-inner -->
+  <div class="px-5 py-3.5 border-b border-[#E5DFD8]">
+    <h2 class="text-[15px] font-semibold text-[#1A1A1A]">Card Title</h2>
+  </div>
+  <!-- Body -->
+  <div class="p-5">
+    <!-- content -->
+  </div>
+</div>
+```
 
-Every page must have a clear primary action. Use the hierarchy below strictly — never use two Primary buttons in the same visible context.
+### 6.2 Buttons
 
-| Variant | Background | Text | Border | Hover | Use When |
-|---|---|---|---|---|---|
-| **Primary** | `bg-school-primary` (`#A51C30`) | `text-white` | none | `hover:bg-crimson-dark` | The single most important action on the screen |
-| **Secondary** | `bg-white` | `text-onyx` | `border border-gray-300` | `hover:bg-gray-50` | Confirming or cancelling alongside a Primary |
-| **Tertiary / Ghost** | transparent | `text-school-primary` | none | `hover:bg-red-50` | Low-emphasis actions like "Add Row", inline links |
-| **Destructive** | `bg-white` | `text-red-600` | `border border-red-200` | `hover:bg-red-50` | Delete, remove, revoke — always requires confirmation |
-
-**Universal Button Rules:**
-- All buttons must have `transition-all duration-200` for smooth state changes.
-- All buttons must have `active:scale-95` for physical click feedback.
-- All buttons must have a minimum height of `py-2.5` (40px total with text) for touch target compliance.
-- Always include `shadow-sm` on Primary and Secondary variants.
-- Icon buttons without visible labels **must** include an `aria-label` attribute.
-
-### 6.2 Input Field States
-
-| State | Border | Background | Ring | Notes |
+| Variant | Background | Text | Border | Hover |
 |---|---|---|---|---|
-| Default | `border-gray-300` | `bg-white` | none | Standard resting state |
-| Focus | `border-school-primary` | `bg-white` | `ring-2 ring-school-primary/20` | **Never remove focus outlines.** |
-| Error | `border-red-300` | `bg-red-50/50` | `ring-2 ring-red-500/20` | Pair with inline error message below the field |
-| Disabled | `border-gray-200` | `bg-gray-50` | none | `cursor-not-allowed`, `text-gray-500` |
+| **Primary** | `#3730A3` | `#FFFFFF` | none | `bg-[#2E27A0]` |
+| **Secondary** | `#FFFFFF` | `#1A1A1A` | `border border-[#D0CBC4]` | `bg-[#F4F1EE]` |
+| **Ghost** | transparent | `#4338CA` | none | `bg-[#EEF2FF]` |
+| **Destructive** | `#FFFFFF` | `#BE123C` | `border border-[#FECDD3]` | `bg-[#FFF1F2]` |
 
-**Input Error Messages:**
-Error text below an invalid field must:
-- Use `text-xs text-red-600 font-medium`
-- Include an `<AlertCircle size={14} />` icon inline before the message text
-- Explain specifically what is wrong (e.g., "This field requires a valid email address.")
+Universal rules:
+- Font: `text-[13px] font-medium`
+- Padding: `px-3 py-1.5` → height ~32px
+- Radius: `rounded-md` (6px)
+- Transition: `transition-all duration-150`
+- Active: `active:scale-95` always
+- Shadow: `shadow-sm` on Primary only
+- Icon gap: `gap-1.5`, Icon size: `16px`
 
-### 6.3 Form Label Standards
-- Labels use `text-sm font-medium text-gray-700`
-- Disabled field labels use `text-sm font-medium text-gray-500`
-- Labels always sit **above** the input, separated by `mb-1`
+### 6.3 Input Fields
 
----
-
-## 7. Data Density & Tables
-
-School management involves massive datasets. Tables must be scannable, sortable, and visually quiet. Let the data speak; suppress the UI chrome.
-
-### 7.1 Table Anatomy Rules
-
-| Element | Required Class(es) |
-|---|---|
-| `<thead>` row | `bg-gray-50 border-b border-gray-200` |
-| `<th>` cells | `text-xs uppercase tracking-wider text-gray-500 font-semibold p-3` or `p-4` |
-| `<tbody>` dividers | `divide-y divide-gray-100` — no vertical borders between columns |
-| `<tr>` hover | `hover:bg-gray-50/50 transition-colors` |
-| ID / Reference columns | `font-mono text-sm text-gray-500` |
-| Name / Text columns | `font-medium text-gray-900` |
-| Numeric & Action columns | `text-right` |
-
-### 7.2 Table Density Modes
-
-- **Comfortable** — Use `p-4` on `<td>` cells. Default for most admin screens.
-- **Compact** — Use `p-2` on `<td>` cells. Use only when displaying more than 20 rows simultaneously.
-
-### 7.3 Status Badges in Tables
-
-Status badges inside table rows follow this pattern:
+```html
+<div class="flex flex-col gap-1">
+  <label class="text-[12px] font-medium text-[#6B6B6B]">
+    Field Label
+  </label>
+  <input class="
+    bg-white border border-[#D0CBC4] rounded-md
+    px-3 py-1.5 text-[13px] text-[#1A1A1A]
+    placeholder:text-[#9E9E9E]
+    focus:outline-none
+    focus:ring-2 focus:ring-[#3730A3]/15
+    focus:border-[#3730A3]/40
+    transition-all duration-150
+  " />
+</div>
 ```
-px-2 py-0.5 rounded-full text-xs font-medium
+
+Inputs use `border-panel` (`#D0CBC4`) — inputs are surfaces, not just controls.
+
+| State | Border | Background | Ring |
+|---|---|---|---|
+| Default | `#D0CBC4` | `#FFFFFF` | none |
+| Focus | `#3730A3` at 40% | `#FFFFFF` | `ring-2 ring-[#3730A3]/15` |
+| Error | `#FECDD3` | `#FFF1F2` at 50% | `ring-2 ring-[#BE123C]/10` |
+| Disabled | `#E5DFD8` | `#F4F1EE` | none |
+
+**Error messages:**
+```html
+<p class="flex items-center gap-1 text-[11px] font-medium text-[#BE123C] mt-1">
+  <AlertCircle size={11} />
+  Specific explanation of what went wrong.
+</p>
 ```
-Pair with semantic background/text colors:
-- Active: `bg-green-100 text-green-800`
-- Inactive / Archived: `bg-gray-100 text-gray-800`
-- Pending: `bg-amber-100 text-amber-800`
-- Suspended: `bg-red-100 text-red-800`
-
-### 7.4 Pagination
-Always use **explicit pagination** with a count label (e.g., "Showing 1–50 of 1,200 records"). Never use infinite scroll in administrative tables — it breaks footer access and makes locating specific records by page unreliable.
 
 ---
 
-## 8. Iconography
+## 7. Navigation & Sidebar
 
-Acadowl exclusively uses **Lucide React** for all icons. Never mix in other icon libraries (e.g., Heroicons, Phosphor, Font Awesome). Never alter stroke weights.
+### 7.1 Sidebar
 
-### 8.1 Sizing Rules
+```
+bg-white
+border-r: 1px solid #D0CBC4   (border-panel on right edge only)
+width: 240px, fixed
+padding: p-3
+```
 
-| Size | Tailwind / Prop | Context |
-|---|---|---|
-| `size={16}` | `size-4` | Inline with text, inside small buttons, inside form inputs |
-| `size={20}` | `size-5` | Sidebar navigation items, standard standalone icons |
-| `size={24}` | `size-6` | Empty state illustrations, section heading accompaniments |
+### 7.2 Nav Items
 
-### 8.2 Standard Icon Metaphors
+```
+Default:  text-[13px] font-normal text-[#6B6B6B]
+          px-3 py-2 rounded-md flex items-center gap-2
 
-Use these icons consistently across the application. Swapping these for alternatives is not permitted.
+Hover:    bg-[#EDEAE6] text-[#1A1A1A]
 
-| Concept | Icon |
+Active:   bg-[#EEF2FF] text-[#3730A3] font-medium
+```
+
+Section group dividers: `border-t border-[#E5DFD8] my-2`
+Section labels: `text-[11px] font-semibold text-[#9E9E9E] uppercase tracking-wider px-3 py-1`
+
+### 7.3 Topbar
+
+```
+bg-white
+border-b: 1px solid #D0CBC4   (border-panel on bottom edge only)
+height: 48px (h-12)
+px-4
+```
+
+| Element | Style |
 |---|---|
-| Students / Users | `<Users />` |
-| Staff / Teachers | `<GraduationCap />` |
-| Attendance | `<CalendarCheck />` |
-| Academics / Subjects | `<BookOpen />` |
-| Fees / Finance | `<CreditCard />` |
-| Settings / Configuration | `<Settings />` |
-| View / Preview | `<Eye />` |
-| Details / Description | `<AlignLeft />` |
-| Devices / Portals | `<MonitorSmartphone />` |
-| Search | `<Search />` |
-| Add / Create | `<Plus />` |
-| Loading | `<Loader2 />` (with `animate-spin`) |
-| Error / Alert | `<AlertCircle />` |
-| Success | `<CheckCircle2 />` |
-| Info | `<Info />` |
+| App name | `text-[14px] font-semibold text-[#1A1A1A]` |
+| Env badge | `text-[11px] font-medium px-2 py-0.5 rounded bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0]` |
+| Deployment ID | `text-[13px] text-[#6B6B6B]` |
+| Nav links | `text-[13px] text-[#6B6B6B] hover:text-[#1A1A1A]` |
 
 ---
 
-## 9. Motion Choreography
+## 8. Data Tables
 
-Motion must be purposeful — guiding the user's attention without causing distraction or motion sickness. Acadowl uses **Tailwind CSS utilities** for micro-interactions and **Framer Motion (`motion/react`)** for complex choreographies.
+### 8.1 Table Wrapper — Mandatory
 
-### 9.1 Standard Transitions
+```html
+<div class="border border-[#D0CBC4] rounded-lg overflow-hidden">
+  <table class="w-full">...</table>
+</div>
+```
 
-| Pattern | Implementation | Usage |
+The wrapper provides `border-panel` and `rounded-lg`. The `<table>` itself has no border. This is the correct pattern — always.
+
+### 8.2 Table Anatomy
+
+| Element | Classes |
+|---|---|
+| `<thead> <tr>` | `bg-[#F4F1EE] border-b border-[#E5DFD8]` |
+| `<th>` | `text-[12px] font-medium text-[#6B6B6B] uppercase tracking-[0.04em] px-4 py-2.5 text-left` |
+| `<th>` column separator | `border-r border-[#E5DFD8] last:border-r-0` (optional, use for high-column-count tables) |
+| `<tbody>` | `divide-y divide-[#EDEAE6] bg-white` |
+| `<tr>` hover | `hover:bg-[#F4F1EE] transition-colors duration-100` |
+| `<td>` default | `text-[13px] text-[#1A1A1A] px-4 py-2.5` |
+| `<td>` secondary | `text-[13px] text-[#6B6B6B]` |
+| `<td>` mono/ID | `font-mono text-[12px] text-[#6B6B6B]` |
+| `<td>` name/primary | `text-[13px] font-medium text-[#1A1A1A]` |
+| Numeric | `text-right tabular-nums` |
+
+### 8.3 Toolbar (inside table card, above `<thead>`)
+
+```html
+<div class="flex items-center gap-2 px-4 py-2.5 border-b border-[#E5DFD8]">
+  <!-- search, filters -->
+  <!-- right side: primary "+ Add" button -->
+</div>
+```
+
+Uses `border-inner` (`#E5DFD8`) — it's a divider within the surface.
+
+### 8.4 Pagination Footer
+
+```html
+<div class="flex items-center justify-between px-4 py-2.5 border-t border-[#E5DFD8]">
+  <span class="text-[12px] text-[#6B6B6B]">Showing 1–50 of 1,200 records</span>
+  <div class="flex items-center gap-1">
+    <!-- Previous / Next: secondary small buttons -->
+  </div>
+</div>
+```
+
+### 8.5 Density
+
+| Mode | `<td>` padding | When |
 |---|---|---|
-| Hover / color change | `transition-all duration-200 ease-in-out` | Universal hover states, border color shifts, background changes |
-| Button press | `active:scale-95` | Applied to all buttons. Provides tactile physical click feedback |
-| Page / section entrance | `initial={{ opacity: 0, y: 40 }}` → `animate={{ opacity: 1, y: 0 }}` with `duration: 0.5` | Page-level content blocks |
-| Modal entrance | `initial={{ opacity: 0, y: 10 }}` → `animate={{ opacity: 1, y: 0 }}` with `duration: 0.3, ease: "easeOut"` | Modals, dialogs, drawers |
-
-### 9.2 Motion Rules
-
-- ✅ Use `whileInView` with `viewport={{ once: true }}` for scroll-triggered section reveals.
-- ✅ Use staggered children animations for lists of cards or table rows loading in.
-- ❌ **Never** use bouncing (`type: "spring"` with high stiffness) or elastic easing on functional UI.
-- ❌ **Never** animate layout shifts that cause content reflow (e.g., don't animate `height: auto`).
-- ❌ **Never** use `duration` values above `500ms` for interactive feedback — it feels sluggish.
+| Standard | `py-2.5` | Default |
+| Compact | `py-2` | 30+ rows |
 
 ---
 
-## 10. Voice, Tone & Error Handling
+## 9. Filter Chips
 
-### 10.1 Tone of Voice
+```html
+<button class="
+  flex items-center gap-1.5 px-3 py-1.5
+  bg-white border border-[#D0CBC4] rounded-md
+  text-[13px] text-[#1A1A1A]
+  hover:bg-[#F4F1EE]
+  transition-all duration-150
+">
+  <Icon size={13} class="text-[#6B6B6B]" />
+  Uploaded at: <span class="font-medium">Any time</span>
+  <ChevronDown size={13} class="text-[#6B6B6B]" />
+</button>
+```
 
-Speak with the confidence of an established institution. Language must be **precise, academic, yet accessible**. Avoid startup jargon, excessive exclamation marks, casual slang, and emojis in system feedback.
-
-**Do not blame the user.** Error messages must always explain what happened and provide a path to resolution.
-
-### 10.2 Message Examples
-
-| Context | ✅ Correct | ❌ Incorrect |
-|---|---|---|
-| Save success | "The student's academic record has been successfully updated." | "Awesome! You totally crushed updating that record! 🎉" |
-| Conflict error | "Unable to save timetable. Mr. Phiri is already assigned to a class during Period 2. Please select a different time slot." | "Oops! Something went wrong. Try again later." |
-| Delete confirmation | "This will permanently remove the student record. This action cannot be undone." | "Are you sure? This might break things!" |
-| Loading state | "Loading student records…" | "Hang tight, crunching the numbers! 🚀" |
-
-### 10.3 Error Message Anatomy
-
-Every inline error or toast notification must include:
-1. **What** went wrong — in plain language.
-2. **Why** it went wrong — if technically explainable.
-3. **How** to fix it — a concrete next step or action.
-
-Dead-end errors ("Something went wrong") are prohibited without an accompanying support reference or recovery action.
+Filter chips use `border-panel` — they are interactive surfaces.
 
 ---
 
-## 11. Accessibility Checklist
+## 10. Empty States
 
-Before shipping any screen or component, verify:
+```html
+<div class="flex flex-col items-center justify-center py-20 gap-3">
+  <div class="bg-[#FFF1F2] rounded-xl p-3">
+    <FileIcon size={24} class="text-[#BE123C]" />
+  </div>
+  <p class="text-[16px] font-semibold text-[#1A1A1A]">No files yet.</p>
+  <p class="text-[13px] text-[#6B6B6B]">Helpful description of what goes here.</p>
+  <a class="text-[13px] text-[#4338CA] hover:underline flex items-center gap-1">
+    <ExternalLink size={12} /> Learn more
+  </a>
+</div>
+```
 
-- [ ] All text passes **WCAG AA contrast** minimum (4.5:1 for normal text, 3:1 for large text).
-- [ ] All primary text passes **WCAG AAA** (7:1 ratio).
-- [ ] Every interactive element has a visible **focus ring** — `focus:ring-2 focus:ring-school-primary/20`.
-- [ ] All icon-only buttons have an `aria-label`.
-- [ ] Form inputs are associated with labels via `htmlFor` / `id` pairing.
-- [ ] Error messages are linked to inputs via `aria-describedby`.
-- [ ] Modals trap focus and restore it on close.
-- [ ] All interactive elements are reachable via `Tab` key navigation.
+Icon containers use semantic background colors (error red for empty, indigo for general, green for success).
 
 ---
 
-## Appendix: Tailwind CSS Custom Tokens
+## 11. Iconography
 
-Add the following custom tokens to your `tailwind.config.js` to enable design system tokens as utility classes:
+Lucide React exclusively.
+
+| Size | Context |
+|---|---|
+| `size={12}` | Inside badges, inline with `11px` text |
+| `size={14}` | Inline with `13px` body, inside inputs |
+| `size={16}` | Sidebar nav, button icons, standard UI icons |
+| `size={20}` | Section headings, empty state icons |
+| `size={24}` | Large empty state illustrations |
+
+---
+
+## 12. Motion
+
+| Pattern | Implementation |
+|---|---|
+| Hover color | `transition-colors duration-100` |
+| Button press | `active:scale-95 transition-transform duration-100` |
+| Dropdown open | Opacity fade only, `duration-100` |
+| Modal enter | Opacity + 4px upward translate, `duration-150` |
+| Page content | No entrance animation |
+
+- ❌ No duration above `200ms`
+- ❌ No spring physics or bounce
+- ❌ No page-level Framer Motion transitions
+- ❌ No staggered table animations
+
+---
+
+## 13. Accessibility
+
+- [ ] All text passes WCAG AA (4.5:1)
+- [ ] Focus ring: `focus-visible:ring-2 focus-visible:ring-[#3730A3]/20`
+- [ ] Icon-only buttons: `aria-label` required
+- [ ] Inputs: `htmlFor` / `id` pairing
+- [ ] Error messages: `aria-describedby` linkage
+- [ ] Modals: focus trap + restore on close
+- [ ] All interactive elements: `Tab` reachable
+
+---
+
+## 14. Tailwind Configuration
 
 ```js
 // tailwind.config.js
@@ -345,18 +558,80 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'school-primary': '#A51C30',
-        'crimson-dark': '#7A1523',
-        'parchment': '#F9F8F6',
-        'onyx': '#111827',
-        'slate-ui': '#6B7280',
-        'gold-leaf': '#D4AF37',
+        'app-bg':          '#EEECEA',
+        'surface':         '#FFFFFF',
+        'surface-subtle':  '#F4F1EE',
+        'surface-hover':   '#EDEAE6',
+
+        // Three-tier border system
+        'border-panel':    '#D0CBC4',   // cards, inputs, sidebar, topbar
+        'border-inner':    '#E5DFD8',   // section dividers WITHIN surfaces
+        'border-row':      '#EDEAE6',   // table row dividers only
+
+        'text-primary':    '#1A1A1A',
+        'text-secondary':  '#6B6B6B',
+        'text-tertiary':   '#9E9E9E',
+
+        'accent':          '#3730A3',
+        'accent-hover':    '#2E27A0',
+        'accent-bg':       '#EEF2FF',
+        'accent-text':     '#4338CA',
+
+        'success':         '#15803D',
+        'success-bg':      '#F0FDF4',
+        'success-border':  '#BBF7D0',
+        'warning':         '#B45309',
+        'warning-bg':      '#FFFBEB',
+        'error':           '#BE123C',
+        'error-bg':        '#FFF1F2',
+        'error-border':    '#FECDD3',
+        'info':            '#1D4ED8',
+        'info-bg':         '#EFF6FF',
+        'info-border':     '#BFDBFE',
       },
+
       fontFamily: {
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'Cascadia Code', 'monospace'],
+      },
+
+      fontSize: {
+        '2xs':  ['11px', { lineHeight: '1.4', letterSpacing: '0.02em' }],
+        'xs':   ['12px', { lineHeight: '1.5' }],
+        'sm':   ['13px', { lineHeight: '1.5' }],
+        'base': ['14px', { lineHeight: '1.6' }],
+        'lg':   ['15px', { lineHeight: '1.5' }],
+        'xl':   ['18px', { lineHeight: '1.4', letterSpacing: '-0.01em' }],
+      },
+
+      borderRadius: {
+        DEFAULT: '4px',
+        'md':    '6px',
+        'lg':    '8px',
+        'xl':    '12px',
+        'full':  '9999px',
+      },
+
+      boxShadow: {
+        'sm':   '0 1px 2px rgba(0, 0, 0, 0.05)',
+        'md':   '0 4px 8px rgba(0, 0, 0, 0.08)',
+        'lg':   '0 8px 24px rgba(0, 0, 0, 0.10)',
       },
     },
   },
 };
 ```
+
+---
+
+## 15. Migration Notes from v4.0
+
+| v4.0 | v4.1 |
+|---|---|
+| `border border-[#E5E3DF]` — too light, too cool | `border border-[#D0CBC4]` — visible, warm |
+| "barely-there" borders | Clearly defined warm gray borders |
+| Geist as primary font | **Inter exclusively** |
+| `text-sm` (14px) as base | `text-[13px]` as primary body/UI text |
+| Vague "use the right border" | Named three-tier system with a decision chart |
+| No mention of table wrapper | Table wrapper `<div>` with `border-panel` is mandatory |
+| Inputs got lighter borders | Inputs use `border-panel` — inputs are surfaces |

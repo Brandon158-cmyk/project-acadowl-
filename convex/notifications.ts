@@ -3,6 +3,8 @@ import { internalMutation, mutation, query } from './_generated/server';
 import { withSchoolScope } from './_lib/schoolContext';
 import { throwError } from './_lib/errors';
 import { ensureSchoolId } from './schools/_helpers';
+import { requirePermission, Permission } from './_lib/permissions';
+
 
 const notificationTypeValidator = v.union(
   v.literal('attendance'),
@@ -174,6 +176,45 @@ export const markAllAsRead = mutation({
       );
 
       return { updatedCount: scopedNotifications.length };
+    });
+  },
+});
+
+export const getSmsDeliveryReport = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId, role }) => {
+      requirePermission(role, Permission.MANAGE_SETTINGS);
+      const scopedSchoolId = ensureSchoolId(schoolId);
+
+      const allNotifications = await ctx.db
+        .query('notifications')
+        .withIndex('by_school', (q) => q.eq('schoolId', scopedSchoolId))
+        .collect();
+
+      const smsOnly = allNotifications
+        .filter((n) => n.channel === 'sms')
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, args.limit ?? 200);
+
+      // Delivery stats aggregation
+      const totals = smsOnly.reduce(
+        (acc, n) => {
+          acc.total++;
+          const s = n.status ?? 'queued';
+          if (s === 'sent' || s === 'delivered') acc.sent++;
+          else if (s === 'failed') acc.failed++;
+          else acc.queued++;
+          if (n.provider === 'airtel') acc.airtel++;
+          else if (n.provider === 'mtn') acc.mtn++;
+          return acc;
+        },
+        { total: 0, sent: 0, failed: 0, queued: 0, airtel: 0, mtn: 0 },
+      );
+
+      return { messages: smsOnly, totals };
     });
   },
 });

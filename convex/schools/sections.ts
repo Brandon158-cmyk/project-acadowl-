@@ -29,21 +29,26 @@ export const createSection = mutation({
         ensureBelongsToSchool(await ctx.db.get(args.classTeacherId), scopedSchoolId, 'Staff record');
       }
 
+      const sectionName = args.name.trim();
+      if (!sectionName) {
+        throwError('VALIDATION', 'Section name cannot be empty.');
+      }
+
       const existing = await ctx.db
         .query('sections')
         .withIndex('by_grade', (q) => q.eq('schoolId', scopedSchoolId).eq('gradeId', args.gradeId))
         .collect();
 
-      const duplicate = existing.find((section) => section.name.toLowerCase() === args.name.trim().toLowerCase());
+      const duplicate = existing.find((section) => section.name.toLowerCase() === sectionName.toLowerCase());
       if (duplicate) {
-        throwError('CONFLICT', `Section ${args.name.trim()} already exists for this grade.`);
+        throwError('CONFLICT', `Section ${sectionName} already exists for this grade.`);
       }
 
       return ctx.db.insert('sections', {
         schoolId: scopedSchoolId,
         gradeId: args.gradeId,
         academicYearId: args.academicYearId,
-        name: args.name.trim(),
+        name: sectionName,
         displayName: args.displayName?.trim(),
         classTeacherId: args.classTeacherId,
         roomNumber: args.roomNumber?.trim(),
@@ -76,8 +81,29 @@ export const updateSection = mutation({
         ensureBelongsToSchool(await ctx.db.get(args.classTeacherId), scopedSchoolId, 'Staff record');
       }
 
+      let name = section.name;
+      if (args.name !== undefined) {
+        const trimmedName = args.name.trim();
+        if (!trimmedName) {
+          throwError('VALIDATION', 'Section name cannot be empty.');
+        }
+
+        if (trimmedName.toLowerCase() !== section.name.toLowerCase()) {
+          const existing = await ctx.db
+            .query('sections')
+            .withIndex('by_grade', (q) => q.eq('schoolId', scopedSchoolId).eq('gradeId', section.gradeId))
+            .collect();
+
+          const duplicate = existing.find((s) => s.name.toLowerCase() === trimmedName.toLowerCase() && s._id !== section._id);
+          if (duplicate) {
+            throwError('CONFLICT', `Section ${trimmedName} already exists for this grade.`);
+          }
+        }
+        name = trimmedName;
+      }
+
       await ctx.db.patch(section._id, {
-        name: args.name?.trim() ?? section.name,
+        name,
         displayName: args.displayName?.trim() ?? section.displayName,
         classTeacherId: args.classTeacherId ?? section.classTeacherId,
         roomNumber: args.roomNumber?.trim() ?? section.roomNumber,

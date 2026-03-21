@@ -54,6 +54,10 @@ export const createGrade = mutation({
     return withSchoolScope(ctx, async ({ schoolId, role }) => {
       requirePermission(role, Permission.MANAGE_SETTINGS);
       const scopedSchoolId = ensureSchoolId(schoolId);
+      const gradeName = args.name.trim();
+      if (!gradeName) {
+        throwError('VALIDATION', 'Grade name cannot be empty.');
+      }
 
       const duplicate = await ctx.db
         .query('grades')
@@ -66,7 +70,7 @@ export const createGrade = mutation({
 
       return ctx.db.insert('grades', {
         schoolId: scopedSchoolId,
-        name: args.name.trim(),
+        name: gradeName,
         level: args.level,
         isActive: true,
         graduationGrade: args.graduationGrade ?? false,
@@ -110,8 +114,17 @@ export const updateGrade = mutation({
         }
       }
 
+      let name = grade.name;
+      if (args.name !== undefined) {
+        const trimmedName = args.name.trim();
+        if (!trimmedName) {
+          throwError('VALIDATION', 'Grade name cannot be empty.');
+        }
+        name = trimmedName;
+      }
+
       await ctx.db.patch(grade._id, {
-        name: args.name?.trim() ?? grade.name,
+        name,
         level: args.level ?? grade.level,
         isActive: args.isActive ?? grade.isActive,
         graduationGrade: args.graduationGrade ?? grade.graduationGrade,
