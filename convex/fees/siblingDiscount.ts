@@ -161,10 +161,11 @@ export const getSiblingGroups = query({
             // For estimation purposes, we query the fee structure for this grade
             let baseFee = 0;
             if (args.termId) {
+              const termId = args.termId;
               const feeStructure = await ctx.db
                 .query('feeStructures')
                 .withIndex('by_term_grade', q => 
-                  q.eq('schoolId', schoolId).eq('termId', args.termId)
+                  q.eq('schoolId', schoolId).eq('termId', termId)
                 )
                 .filter(q => q.eq(q.field('gradeId'), studentDoc?.currentGradeId))
                 .first();
