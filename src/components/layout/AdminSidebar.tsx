@@ -104,7 +104,7 @@ function PrimaryItem({
             <ChevronRight
               size={12}
               className={cn(
-                "ml-auto text-text-secondary transition-transform duration-200 group-hover:text-text-primary",
+                "ml-auto text-text-secondary transition-transform duration-200 group-hover:text-accent-text/80",
                 isSelected && "rotate-90 text-accent",
               )}
             />
@@ -326,7 +326,7 @@ export function AdminSidebar({
         {/* PRIMARY SIDEBAR */}
         <div
           style={{ width: primaryWidth }}
-          className="relative z-10 flex h-full flex-col bg-surface shadow-[5px_0_15px_-5px_rgba(0,0,0,0.08)] transition-[width] duration-300 ease-in-out"
+          className="relative z-10 flex h-full flex-col bg-white shadow-[5px_0_15px_-5px_rgba(0,0,0,0.08)] transition-[width] duration-300 ease-in-out dark:bg-surface"
         >
           {/* Logo / Title area if needed, or stick to Topbar logo */}
 
@@ -371,7 +371,7 @@ export function AdminSidebar({
             width: !hasSecondary ? 0 : isTabbed ? 28 : secondaryWidth,
             borderLeftWidth: hasSecondary ? 1 : 0,
           }}
-          className="relative overflow-hidden bg-surface transition-[width] duration-300 ease-in-out border-border-inner"
+          className="relative overflow-hidden bg-white transition-[width] duration-300 ease-in-out border-border-inner dark:bg-surface"
         >
           <div
             style={{ width: isTabbed ? 28 : secondaryWidth }}
