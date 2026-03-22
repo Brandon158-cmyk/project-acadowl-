@@ -101,6 +101,31 @@ export const updateSchool = mutation({
   },
 });
 
+// Update school settings (ZRA, payment config, etc.)
+export const updateSchoolSettings = mutation({
+  args: {
+    zraTpin: v.optional(v.string()),
+    zraVsdSerial: v.optional(v.string()),
+    zraBranchCode: v.optional(v.string()),
+    zraEnabled: v.optional(v.boolean()),
+    zraMockMode: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId, role }) => {
+      requirePermission(role, Permission.MANAGE_SETTINGS);
+      if (!schoolId) throw new Error('FORBIDDEN: No school context');
+
+      const updates: Record<string, unknown> = { updatedAt: Date.now() };
+      if (args.zraTpin !== undefined) updates.zraTpin = args.zraTpin;
+      if (args.zraVsdSerial !== undefined) updates.zraVsdcSerial = args.zraVsdSerial;
+      if (args.zraBranchCode !== undefined) updates.zraBranchCode = args.zraBranchCode;
+
+      await ctx.db.patch(schoolId, updates);
+      return { success: true };
+    });
+  },
+});
+
 // Update school branding (school admin only)
 export const updateBranding = mutation({
   args: {

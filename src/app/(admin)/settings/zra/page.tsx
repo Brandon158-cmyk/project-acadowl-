@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { api } from '../../../../../convex/_generated/api';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Shield, CheckCircle, AlertTriangle, Save, Loader2 } from 'lucide-react';
 
 export default function ZraSettingsPage() {
-  const settings = useQuery(api.schools.getSchoolSettings);
-  const updateSettings = useMutation(api.schools.updateSchoolSettings);
+  const settings = useQuery(api.schools.queries.getSchoolSettings);
+  const updateSettings = useMutation(api.schools.mutations.updateSchoolSettings);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({

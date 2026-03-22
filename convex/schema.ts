@@ -267,6 +267,7 @@ export default defineSchema({
       requireFullPaymentForPromotion: v.boolean(),
       gracePeriodDays: v.number(),
       arrangementNote: v.optional(v.string()),
+      enableAutomaticReminders: v.optional(v.boolean()),
     })),
 
     // ZRA VSDC (Sprint 02 ISSUE-103)

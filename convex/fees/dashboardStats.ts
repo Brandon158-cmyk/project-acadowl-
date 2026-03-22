@@ -4,7 +4,7 @@ import { withSchoolScope } from '../_lib/schoolContext';
 
 export const getFinanceDashboardStats = query({
   args: {
-    termId: v.id('terms'),
+    termId: v.optional(v.id('terms')),
   },
   handler: async (ctx, args) => {
     return withSchoolScope(ctx, async ({ schoolId }) => {
@@ -23,13 +23,34 @@ export const getFinanceDashboardStats = query({
         };
       }
 
+      // If no termId provided, use the school's current term
+      let termId = args.termId;
+      if (!termId) {
+        const school = await ctx.db.get(schoolId);
+        termId = school?.currentTermId ?? undefined;
+        if (!termId) {
+          return {
+            totalInvoicedZMW: 0,
+            totalCollectedZMW: 0,
+            totalOutstandingZMW: 0,
+            collectionRate: 0,
+            invoiceCount: 0,
+            paidCount: 0,
+            partialCount: 0,
+            overdueCount: 0,
+            recentPayments: [],
+            paymentMethodBreakdown: {},
+          };
+        }
+      }
+
       const now = Date.now();
 
       // Get all invoices for term
       const invoices = await ctx.db
         .query('invoices')
         .withIndex('by_school_term', (q) =>
-          q.eq('schoolId', schoolId).eq('termId', args.termId),
+          q.eq('schoolId', schoolId).eq('termId', termId!),
         )
         .collect();
 
@@ -93,7 +114,7 @@ export const getFinanceDashboardStats = query({
       const paymentMethodBreakdown: Record<string, number> = {};
       for (const p of allPayments) {
         const inv = await ctx.db.get(p.invoiceId);
-        if (!inv || inv.termId !== args.termId) continue;
+        if (!inv || inv.termId !== termId) continue;
 
         const method = p.method;
         const cents = Math.round(p.amountZMW * 100);

@@ -1,5 +1,46 @@
 import { v } from 'convex/values';
 import { query } from '../_generated/server';
+import { withSchoolScope } from '../_lib/schoolContext';
+
+// Get school settings for the current school (used by settings pages)
+export const getSchoolSettings = query({
+  args: {},
+  handler: async (ctx) => {
+    return withSchoolScope(ctx, async ({ schoolId }) => {
+      if (!schoolId) return null;
+
+      const school = await ctx.db.get(schoolId);
+      if (!school) return null;
+
+      return {
+        // ZRA fields
+        zraTpin: school.zraTpin ?? '',
+        zraVsdSerial: (school as any).zraVsdcSerial ?? '',
+        zraBranchCode: (school as any).zraBranchCode ?? '',
+        zraEnabled: !!(school as any).zraVsdcSerial,
+        zraMockMode: !(school as any).zraVsdcSerial,
+
+        // Mobile money config (flattened for payment settings page)
+        airtelEnabled: school.mobileMoneyConfig?.airtel?.isActive ?? false,
+        airtelMerchantCode: school.mobileMoneyConfig?.airtel?.merchantCode ?? '',
+        airtelClientId: school.mobileMoneyConfig?.airtel?.apiClientId ?? '',
+        mtnEnabled: school.mobileMoneyConfig?.mtn?.isActive ?? false,
+        mtnMerchantCode: school.mobileMoneyConfig?.mtn?.merchantCode ?? '',
+        mtnApiUser: school.mobileMoneyConfig?.mtn?.apiUserId ?? '',
+        mtnSubscriptionKey: (school.mobileMoneyConfig?.mtn as any)?.subscriptionKey ?? '',
+        paymentInstructions: (school as any).paymentInstructions ?? '',
+
+        // Arrears policy
+        arrearsPolicy: (school as any).arrearsPolicy ?? null,
+
+        // General
+        name: school.name,
+        slug: school.slug,
+        type: school.type,
+      };
+    });
+  },
+});
 
 // Get a school by its slug (used for subdomain resolution)
 export const getBySlug = query({

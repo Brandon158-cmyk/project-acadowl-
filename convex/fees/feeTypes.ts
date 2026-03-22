@@ -89,6 +89,7 @@ export const updateFeeType = mutation({
     description: v.optional(v.string()),
     isRecurring: v.optional(v.boolean()),
     isOptional: v.optional(v.boolean()),
+    isActive: v.optional(v.boolean()),
     appliesToBoarding: v.optional(
       v.union(
         v.literal('day_only'),
@@ -125,6 +126,7 @@ export const updateFeeType = mutation({
         ...(args.description !== undefined && { description: args.description }),
         ...(args.isRecurring !== undefined && { isRecurring: args.isRecurring }),
         ...(args.isOptional !== undefined && { isOptional: args.isOptional }),
+        ...(args.isActive !== undefined && { isActive: args.isActive }),
         ...(args.appliesToBoarding !== undefined && { appliesToBoarding: args.appliesToBoarding }),
         ...(args.zraLevyCode !== undefined && { zraLevyCode: args.zraLevyCode }),
         ...(args.zraVatCategory !== undefined && { zraVatCategory: args.zraVatCategory }),

@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { api } from '../../../../../convex/_generated/api';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -55,7 +55,7 @@ export default function CashbookPage() {
       {!isPrintMode && (
         <div className="flex flex-wrap gap-4 p-4 bg-white border border-border-panel rounded-lg">
           <Popover>
-            <PopoverTrigger asChild>
+            <PopoverTrigger>
               <Button variant="outline" className="gap-2">
                 <CalendarIcon className="h-4 w-4" />
                 {format(selectedDate, 'PPP')}
@@ -78,13 +78,13 @@ export default function CashbookPage() {
         <div className="p-4 bg-white border border-border-panel rounded-lg print:border-black">
           <p className="text-[12px] text-text-secondary print:text-black">Total Cash Received</p>
           <p className="text-[24px] font-semibold text-text-primary print:text-black">
-            {formatZMW(cashbook.totalCash)}
+            {formatZMW(cashbook.totalZMW)}
           </p>
         </div>
         <div className="p-4 bg-white border border-border-panel rounded-lg print:border-black">
           <p className="text-[12px] text-text-secondary print:text-black">Number of Transactions</p>
           <p className="text-[24px] font-semibold text-text-primary print:text-black">
-            {cashbook.entryCount}
+            {cashbook.entries.length}
           </p>
         </div>
         <div className="p-4 bg-white border border-border-panel rounded-lg print:border-black">
@@ -143,7 +143,7 @@ export default function CashbookPage() {
                   </TableCell>
                   <TableCell className="px-4 py-3 text-right">
                     <p className="text-[15px] font-semibold text-text-primary tabular-nums print:text-black">
-                      {formatZMW(cashbook.totalCash)}
+                      {formatZMW(cashbook.totalZMW)}
                     </p>
                   </TableCell>
                 </TableRow>
@@ -152,11 +152,10 @@ export default function CashbookPage() {
           </div>
         ) : (
           <div className="py-12">
-            <Empty
-              title="No cash entries"
-              description={`No cash payments recorded for ${format(selectedDate, 'PPP')}`}
-              icon={Banknote}
-            />
+            <Empty>
+              <EmptyTitle>No cash entries</EmptyTitle>
+              <EmptyDescription>No cash payments recorded for {format(selectedDate, 'PPP')}</EmptyDescription>
+            </Empty>
           </div>
         )}
       </SectionCard>

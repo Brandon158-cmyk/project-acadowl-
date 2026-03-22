@@ -2,19 +2,19 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Upload, CheckCircle2, XCircle, AlertCircle, FileText, Check, Landmark, Download } from 'lucide-react';
+import { Upload, Landmark, Download } from 'lucide-react';
 import { formatZMW } from '@/lib/utils/formatZMW';
 import { format } from 'date-fns';
+import { api } from '../../../../../convex/_generated/api';
 
 const BANK_FORMATS = [
   { value: 'zanaco_csv', label: 'ZANACO Bank (CSV)' },
@@ -83,7 +83,7 @@ export default function BankReconciliationPage() {
       >
         <div className="p-5 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <Select value={selectedFormat} onValueChange={setSelectedFormat}>
+            <Select value={selectedFormat} onValueChange={(value) => setSelectedFormat(value as string)}>
               <SelectTrigger className="text-[13px]">
                 <SelectValue placeholder="Select bank format" />
               </SelectTrigger>
@@ -171,11 +171,10 @@ export default function BankReconciliationPage() {
           </div>
         ) : (
           <div className="py-12">
-            <Empty
-              title="No imports yet"
-              description="Upload your first bank statement to get started"
-              icon={Landmark}
-            />
+            <Empty>
+              <EmptyTitle>No imports yet</EmptyTitle>
+              <EmptyDescription>Upload your first bank statement to get started</EmptyDescription>
+            </Empty>
           </div>
         )}
       </SectionCard>

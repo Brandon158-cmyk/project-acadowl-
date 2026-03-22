@@ -2,24 +2,23 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Plus, GraduationCap, Check, ChevronsUpDown, Search, BadgePercent, Calendar } from 'lucide-react';
+import { Plus, GraduationCap, Check, ChevronsUpDown } from 'lucide-react';
 import { formatZMW } from '@/lib/utils/formatZMW';
 import { cn } from '@/lib/utils';
+import { api } from '../../../../../convex/_generated/api';
 
 const DISCOUNT_TYPES = [
   { value: 'full', label: '100% Full Scholarship' },
@@ -37,7 +36,7 @@ export default function ScholarshipsPage() {
     studentId: '',
     name: '',
     provider: '',
-    discountType: 'full' as const,
+    discountType: 'full' as 'full' | 'partial_percent' | 'partial_fixed',
     discountPercent: 100,
     discountAmountZMW: '',
     applicableFeeTypes: [] as string[],
@@ -48,7 +47,7 @@ export default function ScholarshipsPage() {
 
   const scholarships = useQuery(api.fees.scholarships.getScholarships, { limit: 100 });
   const students = useQuery(
-    api.students.searchStudents,
+    api.students.queries.searchStudents,
     studentSearch.length >= 2 ? { query: studentSearch, limit: 10 } : 'skip'
   );
   const feeTypes = useQuery(api.fees.feeTypes.getFeeTypes);
@@ -186,7 +185,10 @@ export default function ScholarshipsPage() {
           </div>
         ) : (
           <div className="py-12">
-            <Empty title="No scholarships" description="Add scholarships for students" icon={GraduationCap} />
+            <Empty>
+              <EmptyTitle>No scholarships</EmptyTitle>
+              <EmptyDescription>Add scholarships for students</EmptyDescription>
+            </Empty>
           </div>
         )}
       </SectionCard>
@@ -202,7 +204,7 @@ export default function ScholarshipsPage() {
             <div className="space-y-2">
               <Label className="text-[12px] text-text-secondary">Student</Label>
               <Popover>
-                <PopoverTrigger asChild>
+                <PopoverTrigger>
                   <Button variant="outline" className="w-full justify-between text-[13px]">
                     {selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : 'Search student...'}
                     <ChevronsUpDown className="h-4 w-4 opacity-50" />

@@ -16,7 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +29,12 @@ const VAT_CATEGORIES = [
   { value: 'standard', label: 'Standard Rate (16%)' },
   { value: 'zero_rated', label: 'Zero Rated' },
   { value: 'levy', label: 'Levy (Development)' },
+];
+
+const APPLIES_TO_BOARDING_OPTIONS = [
+  { value: 'day_only', label: 'Day students only' },
+  { value: 'boarding_only', label: 'Boarding students only' },
+  { value: 'all', label: 'All students' },
 ];
 
 export default function FeeTypesPage() {
@@ -47,6 +53,8 @@ export default function FeeTypesPage() {
     name: '',
     description: '',
     isRecurring: true,
+    isOptional: false,
+    appliesToBoarding: 'all' as 'day_only' | 'boarding_only' | 'all',
     zraVatCategory: 'exempt' as const,
   });
 
@@ -55,7 +63,7 @@ export default function FeeTypesPage() {
     try {
       await addFeeType(formData);
       setIsAddDialogOpen(false);
-      setFormData({ name: '', description: '', isRecurring: true, zraVatCategory: 'exempt' });
+      setFormData({ name: '', description: '', isRecurring: true, isOptional: false, appliesToBoarding: 'all', zraVatCategory: 'exempt' });
     } finally {
       setIsSubmitting(false);
     }
@@ -92,6 +100,8 @@ export default function FeeTypesPage() {
       name: feeType.name,
       description: feeType.description || '',
       isRecurring: feeType.isRecurring,
+      isOptional: feeType.isOptional ?? false,
+      appliesToBoarding: feeType.appliesToBoarding ?? 'all',
       zraVatCategory: feeType.zraVatCategory,
     });
   };
@@ -221,11 +231,10 @@ export default function FeeTypesPage() {
           </div>
         ) : (
           <div className="py-12">
-            <Empty
-              title="No fee types defined"
-              description="Create fee types like Tuition, Development Levy, Boarding, etc."
-              icon={Plus}
-              action={
+            <Empty>
+              <EmptyTitle>No fee types defined</EmptyTitle>
+              <EmptyDescription>Create fee types like Tuition, Development Levy, Boarding, etc.</EmptyDescription>
+             
                 <Button
                   onClick={() => setIsAddDialogOpen(true)}
                   className="gap-2 bg-accent hover:bg-accent-hover"
@@ -233,8 +242,8 @@ export default function FeeTypesPage() {
                   <Plus className="h-4 w-4" />
                   Add Fee Type
                 </Button>
-              }
-            />
+              
+            </Empty>
           </div>
         )}
       </SectionCard>
@@ -350,6 +359,36 @@ function FeeTypeForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="appliesToBoarding" className="text-[12px] font-medium text-text-secondary">
+          Applies To
+        </Label>
+        <Select
+          value={formData.appliesToBoarding}
+          onValueChange={(value) => setFormData({ ...formData, appliesToBoarding: value as 'day_only' | 'boarding_only' | 'all' })}
+        >
+          <SelectTrigger id="appliesToBoarding" className="text-[13px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {APPLIES_TO_BOARDING_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value} className="text-[13px]">
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center gap-2">
+        <Switch
+          checked={formData.isOptional}
+          onCheckedChange={(checked) => setFormData({ ...formData, isOptional: checked })}
+          id="isOptional"
+        />
+        <Label htmlFor="isOptional" className="text-[13px] cursor-pointer">
+          Optional fee (not required for enrolment)
+        </Label>
       </div>
       <div className="flex items-center gap-2">
         <Switch

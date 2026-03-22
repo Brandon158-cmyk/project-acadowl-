@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { api } from '../../../../../convex/_generated/api';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Shield, CheckCircle, XCircle, AlertTriangle, RotateCcw, FileText, ExternalLink } from 'lucide-react';
@@ -24,7 +24,7 @@ const ZRA_STATUS = {
 };
 
 export default function ZraCompliancePage() {
-  const [selectedTermId, setSelectedTermId] = useState<string>('');
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
   const [retryInvoice, setRetryInvoice] = useState<any>(null);
   const [bulkRetryOpen, setBulkRetryOpen] = useState(false);
 
@@ -222,7 +222,11 @@ export default function ZraCompliancePage() {
                   </Table>
                 </div>
               ) : (
-                <Empty title="No invoices" description="No invoices found for this term" icon={FileText} />
+                <Empty>
+                  <EmptyTitle>No invoices</EmptyTitle>
+                  <EmptyDescription>No invoices found for this term</EmptyDescription>
+
+                </Empty>
               )}
             </SectionCard>
           </>

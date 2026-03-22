@@ -48,6 +48,10 @@ interface MetricCardProps {
   helper?: string;
   icon: LucideIcon;
   color?: Variant;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
 }
 
 export function MetricCard({
@@ -56,6 +60,7 @@ export function MetricCard({
   helper,
   icon: Icon,
   color = "neutral",
+  trend,
 }: MetricCardProps) {
   const v = variants[color];
   return (
@@ -86,6 +91,11 @@ export function MetricCard({
       </p>
       {helper && (
         <p className="mt-1.5 text-[11px] text-text-secondary">{helper}</p>
+      )}
+      {trend && (
+        <p className="mt-1.5 text-[11px] text-text-secondary">
+          {trend.isPositive ? "+" : "-"}{trend.value}%
+        </p>
       )}
     </div>
   );

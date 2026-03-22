@@ -2,16 +2,17 @@
 
 import { useState } from 'react';
 import { useQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, BarChart3, PieChart, Users, AlertTriangle, TrendingDown } from 'lucide-react';
+import { TrendingUp, BarChart3, PieChart, AlertTriangle } from 'lucide-react';
 import { formatZMW } from '@/lib/utils/formatZMW';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart as RePieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart as RePieChart, Pie, Cell } from 'recharts';
+import { api } from '../../../../../convex/_generated/api';
 
 const COLORS = ['#3730A3', '#15803D', '#B45309', '#6B6B6B', '#BE123C', '#0369A1'];
 
@@ -57,7 +58,7 @@ export default function AnalyticsPage() {
       />
 
       <div className="flex flex-wrap gap-4 p-4 bg-white border border-border-panel rounded-lg">
-        <Select value={selectedTermId} onValueChange={setSelectedTermId}>
+        <Select value={selectedTermId} onValueChange={(val) => setSelectedTermId(val ?? '')}>
           <SelectTrigger className="w-[200px] text-[13px]">
             <SelectValue placeholder="Select term" />
           </SelectTrigger>
@@ -79,28 +80,28 @@ export default function AnalyticsPage() {
                   <BarChart3 className="h-4 w-4" />
                   <span className="text-[12px]">Expected Revenue</span>
                 </div>
-                <p className="text-[20px] font-semibold text-text-primary">{formatZMW(analytics.totalExpected)}</p>
+                <p className="text-[20px] font-semibold text-text-primary">{formatZMW(analytics.totalExpected ?? 0)}</p>
               </div>
               <div className="p-4 bg-white border border-border-panel rounded-lg">
                 <div className="flex items-center gap-2 text-text-secondary mb-1">
                   <TrendingUp className="h-4 w-4" />
                   <span className="text-[12px]">Collected</span>
                 </div>
-                <p className="text-[20px] font-semibold text-success">{formatZMW(analytics.totalCollected)}</p>
+                <p className="text-[20px] font-semibold text-success">{formatZMW(analytics.totalCollected ?? 0)}</p>
               </div>
               <div className="p-4 bg-white border border-border-panel rounded-lg">
                 <div className="flex items-center gap-2 text-text-secondary mb-1">
                   <AlertTriangle className="h-4 w-4" />
                   <span className="text-[12px]">Outstanding</span>
                 </div>
-                <p className="text-[20px] font-semibold text-error">{formatZMW(analytics.totalOutstanding)}</p>
+                <p className="text-[20px] font-semibold text-error">{formatZMW(analytics.totalOutstanding ?? 0)}</p>
               </div>
               <div className="p-4 bg-white border border-border-panel rounded-lg">
                 <div className="flex items-center gap-2 text-text-secondary mb-1">
                   <PieChart className="h-4 w-4" />
                   <span className="text-[12px]">Collection Rate</span>
                 </div>
-                <p className="text-[20px] font-semibold text-accent">{analytics.collectionRate.toFixed(1)}%</p>
+                <p className="text-[20px] font-semibold text-accent">{(analytics.collectionRate ?? 0).toFixed(1)}%</p>
               </div>
             </div>
 
@@ -124,7 +125,10 @@ export default function AnalyticsPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <Empty title="No data" description="No grade data available for this term" icon={BarChart3} />
+                    <Empty>
+                      <EmptyTitle>No data</EmptyTitle>
+                      <EmptyDescription>No grade data available for this term</EmptyDescription>
+                    </Empty>
                   )}
                 </div>
               </SectionCard>
@@ -152,7 +156,10 @@ export default function AnalyticsPage() {
                       </RePieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <Empty title="No data" description="No payment data for this term" icon={PieChart} />
+                    <Empty>
+                      <EmptyTitle>No data</EmptyTitle>
+                      <EmptyDescription>No payment data for this term</EmptyDescription>
+                    </Empty>
                   )}
                 </div>
                 {/* Legend */}
@@ -194,7 +201,7 @@ export default function AnalyticsPage() {
                             <p className="text-[13px] text-text-secondary">{item.gradeName}</p>
                           </TableCell>
                           <TableCell className="px-4 py-3 text-right">
-                            <p className="text-[13px] font-semibold text-error tabular-nums">{formatZMW(item.balanceZMW)}</p>
+                            <p className="text-[13px] font-semibold text-error tabular-nums">{formatZMW(item.outstandingZMW)}</p>
                           </TableCell>
                           <TableCell className="px-4 py-3 text-right">
                             <Badge variant="outline" className="text-[11px]">{item.percentOfGradeTotal.toFixed(1)}%</Badge>
@@ -206,7 +213,10 @@ export default function AnalyticsPage() {
                 </div>
               ) : (
                 <div className="py-12">
-                  <Empty title="No outstanding balances" description="All students are up to date" icon={TrendingDown} />
+                  <Empty>
+                    <EmptyTitle>No outstanding balances</EmptyTitle>
+                    <EmptyDescription>All students are up to date</EmptyDescription>
+                  </Empty>
                 </div>
               )}
             </SectionCard>

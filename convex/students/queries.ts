@@ -87,7 +87,9 @@ export const listStudents = query({
 
 export const searchStudents = query({
   args: {
-    term: v.string(),
+    term: v.optional(v.string()),
+    query: v.optional(v.string()),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     return withSchoolScope(ctx, async ({ schoolId, role }) => {
@@ -97,16 +99,17 @@ export const searchStudents = query({
         .query('students')
         .withIndex('by_school', (q) => q.eq('schoolId', scopedSchoolId))
         .collect();
-      const term = args.term.trim().toLowerCase();
+      const searchTerm = (args.term ?? args.query ?? '').trim().toLowerCase();
+      const maxResults = args.limit ?? 20;
 
       return students
         .filter((student) =>
           [`${student.firstName} ${student.lastName}`, student.studentNumber, student.email ?? '', student.phone ?? '']
             .join(' ')
             .toLowerCase()
-            .includes(term),
+            .includes(searchTerm),
         )
-        .slice(0, 20);
+        .slice(0, maxResults);
     });
   },
 });

@@ -5,11 +5,12 @@ interface SectionCardProps {
   description?: string;
   action?: ReactNode;
   children: ReactNode;
+  className?: string;
 }
 
-export function SectionCard({ title, description, action, children }: SectionCardProps) {
+export function SectionCard({ title, description, action, children, className }: SectionCardProps) {
   return (
-    <section className="rounded-lg border border-border-panel bg-white">
+    <section className={className ?? "rounded-lg border border-border-panel bg-white"}>
       <div className="flex items-start justify-between gap-4 px-5 py-3.5 border-b border-border-inner">
         <div>
           <h2 className="text-[15px] font-semibold text-text-primary">{title}</h2>

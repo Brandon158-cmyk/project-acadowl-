@@ -4,16 +4,21 @@ import { withSchoolScope } from '../_lib/schoolContext';
 
 export const getDailyCashbookReport = query({
   args: {
-    date: v.string(), // ISO date string e.g. "2025-03-22"
+    date: v.union(v.string(), v.number()), // ISO date string or timestamp
   },
   handler: async (ctx, args) => {
     return withSchoolScope(ctx, async ({ schoolId }) => {
+      // Normalise date: if number (timestamp), convert to ISO date string
+      const dateStr = typeof args.date === 'number'
+        ? new Date(args.date).toISOString().split('T')[0]
+        : args.date;
+
       if (!schoolId) {
-        return { date: args.date, totalZMW: 0, entries: [], byMethod: {} };
+        return { date: dateStr, totalZMW: 0, entries: [], byMethod: {} };
       }
 
       // Parse date range
-      const dayStart = new Date(args.date).getTime();
+      const dayStart = new Date(dateStr).getTime();
       const dayEnd = dayStart + 24 * 60 * 60 * 1000;
 
       // Get all confirmed payments for this date
@@ -61,7 +66,7 @@ export const getDailyCashbookReport = query({
       entries.sort((a, b) => a.time.localeCompare(b.time));
 
       return {
-        date: args.date,
+        date: dateStr,
         totalZMW: totalCents / 100,
         entries,
         byMethod,

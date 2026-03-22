@@ -2,19 +2,19 @@
 
 import { useState } from 'react';
 import { useQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollText, Download, FileText, Receipt, CreditCard, AlertCircle, CheckCircle, Ban, Edit, UserPlus, Trash2, RotateCcw } from 'lucide-react';
 import { formatZMW } from '@/lib/utils/formatZMW';
 import { format } from 'date-fns';
+import { api } from '../../../../../convex/_generated/api';
 
 const ACTION_TYPES = [
   { value: 'all', label: 'All Actions' },
@@ -122,7 +122,7 @@ export default function AuditLogPage() {
             className="text-[13px]"
           />
         </div>
-        <Select value={actionFilter} onValueChange={setActionFilter}>
+        <Select value={actionFilter} onValueChange={(value) => setActionFilter(value || "all")}>
           <SelectTrigger className="w-[180px] text-[13px]">
             <SelectValue />
           </SelectTrigger>
@@ -132,7 +132,7 @@ export default function AuditLogPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={dateRange} onValueChange={setDateRange}>
+        <Select value={dateRange} onValueChange={(value) => setDateRange(value || "30")}>
           <SelectTrigger className="w-[140px] text-[13px]">
             <SelectValue />
           </SelectTrigger>
@@ -198,11 +198,15 @@ export default function AuditLogPage() {
           </div>
         ) : (
           <div className="py-12">
-            <Empty
-              title="No audit entries found"
-              description={searchQuery || actionFilter !== 'all' ? 'Try adjusting your filters' : 'Audit log will record all financial transactions'}
-              icon={ScrollText}
-            />
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>No audit entries found</EmptyTitle>
+                <EmptyDescription>{searchQuery || actionFilter !== 'all' ? 'Try adjusting your filters' : 'Audit log will record all financial activities'}</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <ScrollText className="h-12 w-12 text-muted-foreground" />
+              </EmptyContent>
+            </Empty>
           </div>
         )}
       </SectionCard>

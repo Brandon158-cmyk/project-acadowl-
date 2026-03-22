@@ -6,26 +6,37 @@ import { classifyArrears } from './arrears';
 
 export const updateArrearsPolicy = mutation({
   args: {
-    reminderScheduleDays: v.array(v.number()),
+    // Backend field names
+    reminderScheduleDays: v.optional(v.array(v.number())),
+    requireFullPaymentForPromotion: v.optional(v.boolean()),
+    gracePeriodDays: v.optional(v.number()),
+    arrangementNote: v.optional(v.string()),
+    // Frontend field names (aliases)
+    reminderDays: v.optional(v.array(v.number())),
+    requireFeesClearedForPromotion: v.optional(v.boolean()),
+    enableAutomaticReminders: v.optional(v.boolean()),
+    // Shared field names
     blockExamAccessAtDays: v.optional(v.number()),
     holdReportCardAtDays: v.optional(v.number()),
-    requireFullPaymentForPromotion: v.boolean(),
-    gracePeriodDays: v.number(),
-    arrangementNote: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return withSchoolScope(ctx, async ({ schoolId, role }) => {
       requirePermission(role, Permission.MANAGE_SETTINGS);
       if (!schoolId) throw new Error('School context required');
 
+      // Resolve aliased fields
+      const reminderScheduleDays = args.reminderScheduleDays ?? args.reminderDays ?? [];
+      const requireFullPayment = args.requireFullPaymentForPromotion ?? args.requireFeesClearedForPromotion ?? false;
+
       await ctx.db.patch(schoolId, {
         arrearsPolicy: {
-          reminderScheduleDays: args.reminderScheduleDays,
+          reminderScheduleDays,
           blockExamAccessAtDays: args.blockExamAccessAtDays,
           holdReportCardAtDays: args.holdReportCardAtDays,
-          requireFullPaymentForPromotion: args.requireFullPaymentForPromotion,
-          gracePeriodDays: args.gracePeriodDays,
+          requireFullPaymentForPromotion: requireFullPayment,
+          gracePeriodDays: args.gracePeriodDays ?? 0,
           arrangementNote: args.arrangementNote,
+          enableAutomaticReminders: args.enableAutomaticReminders,
         },
         updatedAt: Date.now(),
       });
@@ -39,7 +50,16 @@ export const getArrearsPolicy = query({
     return withSchoolScope(ctx, async ({ schoolId }) => {
       if (!schoolId) return null;
       const school = await ctx.db.get(schoolId);
-      return school?.arrearsPolicy ?? null;
+      const policy = school?.arrearsPolicy;
+      if (!policy) return null;
+
+      return {
+        ...policy,
+        // Aliased field names for frontend compatibility
+        reminderDays: policy.reminderScheduleDays ?? [],
+        requireFeesClearedForPromotion: policy.requireFullPaymentForPromotion ?? false,
+        enableAutomaticReminders: (policy as any).enableAutomaticReminders ?? true,
+      };
     });
   },
 });

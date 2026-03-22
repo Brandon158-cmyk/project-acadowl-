@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { api } from '../../../../../convex/_generated/api';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { UsersRound, Calculator, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { UsersRound, Calculator } from 'lucide-react';
 import { formatZMW } from '@/lib/utils/formatZMW';
 
 interface SiblingGroup {
@@ -55,7 +55,7 @@ export default function SiblingGroupsPage() {
       />
 
       <div className="flex flex-wrap gap-4 p-4 bg-white border border-border-panel rounded-lg">
-        <Select value={selectedTermId} onValueChange={setSelectedTermId}>
+        <Select value={selectedTermId} onValueChange={(value) => setSelectedTermId(value ?? '')}>
           <SelectTrigger className="w-[200px] text-[13px]">
             <SelectValue placeholder="Select term" />
           </SelectTrigger>
@@ -125,11 +125,10 @@ export default function SiblingGroupsPage() {
             </div>
           ) : (
             <div className="py-12">
-              <Empty
-                title="No sibling groups found"
-                description="No guardians with multiple children enrolled this term"
-                icon={UsersRound}
-              />
+              <Empty>
+                <EmptyTitle>No sibling groups found</EmptyTitle>
+                <EmptyDescription>No guardians with multiple children enrolled this term</EmptyDescription>
+              </Empty>
             </div>
           )
         ) : (

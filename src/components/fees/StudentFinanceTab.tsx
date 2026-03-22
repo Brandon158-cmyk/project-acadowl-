@@ -2,32 +2,29 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { 
   Receipt, 
   Banknote, 
   CreditCard, 
-  GraduationCap, 
-  CheckCircle2, 
-  AlertTriangle,
   FileText,
   Download,
-  Plus,
   History,
   Award
 } from 'lucide-react';
 import { formatZMW } from '@/lib/utils/formatZMW';
 import Link from 'next/link';
+import { api } from '../../../convex/_generated/api';
 
 interface StudentFinanceTabProps {
   studentId: string;
@@ -205,7 +202,7 @@ export default function StudentFinanceTab({ studentId }: StudentFinanceTabProps)
                           </TableCell>
                           <TableCell className="px-4 py-2.5 text-right">
                             {invoice.pdfUrl && (
-                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" asChild>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                                 <a href={invoice.pdfUrl} target="_blank" rel="noopener noreferrer">
                                   <Download className="h-4 w-4 text-text-secondary" />
                                 </a>
@@ -218,7 +215,10 @@ export default function StudentFinanceTab({ studentId }: StudentFinanceTabProps)
                   </Table>
                 </div>
               ) : (
-                <Empty title="No invoices" description="No fee invoices for this student" icon={Receipt} />
+                <Empty>
+                  <EmptyTitle>No invoices</EmptyTitle>
+                  <EmptyDescription>No fee invoices for this student</EmptyDescription>
+                </Empty>
               )}
             </CardContent>
           </Card>
@@ -276,7 +276,10 @@ export default function StudentFinanceTab({ studentId }: StudentFinanceTabProps)
                   </Table>
                 </div>
               ) : (
-                <Empty title="No transactions" description="No ledger entries for this student" icon={History} />
+                <Empty>
+                  <EmptyTitle>No transactions</EmptyTitle>
+                  <EmptyDescription>No ledger entries for this student</EmptyDescription>
+                </Empty>
               )}
             </CardContent>
           </Card>
@@ -312,7 +315,10 @@ export default function StudentFinanceTab({ studentId }: StudentFinanceTabProps)
                   ))}
                 </div>
               ) : (
-                <Empty title="No credit notes" description="No credits issued to this student" icon={CreditCard} />
+                <Empty>
+                  <EmptyTitle>No credit notes</EmptyTitle>
+                  <EmptyDescription>No credits issued to this student</EmptyDescription>
+                </Empty>
               )}
             </CardContent>
           </Card>
@@ -347,7 +353,10 @@ export default function StudentFinanceTab({ studentId }: StudentFinanceTabProps)
                   ))}
                 </div>
               ) : (
-                <Empty title="No scholarships" description="No active scholarships for this student" icon={GraduationCap} />
+                <Empty>
+                  <EmptyTitle>No scholarships</EmptyTitle>
+                  <EmptyDescription>No active scholarships for this student</EmptyDescription>
+                </Empty>
               )}
             </CardContent>
           </Card>
@@ -364,7 +373,7 @@ export default function StudentFinanceTab({ studentId }: StudentFinanceTabProps)
             <div className="space-y-2">
               <Label className="text-[12px] text-text-secondary">Select Invoice</Label>
               <Select
-                value={paymentForm.invoiceId}
+                value={paymentForm.invoiceId || ''}
                 onValueChange={(v) => setPaymentForm({ ...paymentForm, invoiceId: v })}
               >
                 <SelectTrigger className="text-[13px]">
@@ -435,7 +444,6 @@ export default function StudentFinanceTab({ studentId }: StudentFinanceTabProps)
   );
 }
 
-import { Label } from '@/components/ui/label';
 
 function StudentFinanceSkeleton() {
   return (

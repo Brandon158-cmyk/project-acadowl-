@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, Send, FileText, Mail, Bell } from 'lucide-react';
@@ -30,7 +30,7 @@ export default function ArrearsPage() {
 
   const arrears = useQuery(api.fees.arrears.getArrearsReport, { termId: undefined });
   const grades = useQuery(api.grades.getGrades);
-  const sendReminder = useMutation(api.fees.arrears.processReminderEngine);
+  const sendReminder = useMutation(api.fees.arrears.sendReminders);
 
   const handleSendReminder = async (studentId: string, type: string) => {
     await sendReminder({ studentIds: [studentId as any] });
@@ -117,7 +117,7 @@ export default function ArrearsPage() {
             className="text-[13px]"
           />
         </div>
-        <Select value={gradeFilter} onValueChange={setGradeFilter}>
+        <Select value={gradeFilter} onValueChange={(value) => setGradeFilter(value || 'all')}>
           <SelectTrigger className="w-[160px] text-[13px]">
             <SelectValue placeholder="Grade" />
           </SelectTrigger>
@@ -205,11 +205,10 @@ export default function ArrearsPage() {
           </div>
         ) : (
           <div className="py-12">
-            <Empty
-              title="No arrears found"
-              description={searchQuery || selectedBucket !== 'all' ? 'Try adjusting filters' : 'All students are up to date on payments'}
-              icon={AlertTriangle}
-            />
+            <Empty>
+              <EmptyTitle>No arrears found</EmptyTitle>
+              <EmptyDescription>{searchQuery || selectedBucket !== 'all' ? 'Try adjusting filters' : 'All students are up to date on payments'}</EmptyDescription>
+            </Empty>
           </div>
         )}
       </SectionCard>

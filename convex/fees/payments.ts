@@ -11,6 +11,8 @@ export const recordManualPayment = mutation({
       v.literal('cash'),
       v.literal('bank_transfer'),
       v.literal('cheque'),
+      v.literal('airtel_money'),
+      v.literal('mtn_momo'),
     ),
     reference: v.optional(v.string()),
     notes: v.optional(v.string()),

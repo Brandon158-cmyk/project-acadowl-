@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { Badge } from '@/components/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -18,7 +18,9 @@ import { formatZMW } from '@/lib/utils/formatZMW';
 import { cn } from '@/lib/utils';
 import { api } from '../../../../../../convex/_generated/api';
 
-const PAYMENT_METHODS = [
+type PaymentMethod = 'cash' | 'bank_transfer' | 'cheque' | 'airtel_money' | 'mtn_momo';
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: any }[] = [
   { value: 'cash', label: 'Cash', icon: Banknote },
   { value: 'bank_transfer', label: 'Bank Transfer', icon: Landmark },
   { value: 'cheque', label: 'Cheque', icon: CreditCard },
@@ -35,15 +37,20 @@ export default function RecordPaymentPage() {
   const [showReceipt, setShowReceipt] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    amountZMW: string;
+    method: PaymentMethod;
+    reference: string;
+    notes: string;
+  }>({
     amountZMW: '',
-    method: 'cash' as const,
+    method: 'cash' as PaymentMethod,
     reference: '',
     notes: '',
   });
 
   const students = useQuery(
-    api.students.searchStudents,
+    api.students.queries.searchStudents,
     studentSearch.length >= 2 ? { query: studentSearch, limit: 10 } : 'skip'
   );
 
@@ -215,11 +222,11 @@ export default function RecordPaymentPage() {
                       ))}
                     </div>
                   ) : (
-                    <Empty
-                      title="No unpaid invoices"
-                      description="This student has no outstanding invoices"
-                      icon={Receipt}
-                    />
+                    <Empty>
+                      <EmptyTitle>No unpaid invoices</EmptyTitle>
+                      <EmptyDescription>This student has no outstanding invoices</EmptyDescription>
+                    </Empty>
+                    
                   )
                 ) : (
                   <Skeleton className="h-32" />
@@ -303,7 +310,7 @@ export default function RecordPaymentPage() {
               <Label className="text-[12px] text-text-secondary">Payment Method</Label>
               <Select
                 value={formData.method}
-                onValueChange={(v: any) => setFormData({ ...formData, method: v })}
+                onValueChange={(v) => v && setFormData({ ...formData, method: v as PaymentMethod })}
                 disabled={!selectedInvoice}
               >
                 <SelectTrigger className="text-[13px]">

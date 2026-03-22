@@ -1,5 +1,6 @@
 // Format a number as Zambian Kwacha (ZMW)
-export function formatZMW(amount: number): string {
+export function formatZMW(amount: number | undefined): string {
+  if (amount === undefined) return 'K0.00';
   return new Intl.NumberFormat('en-ZM', {
     style: 'currency',
     currency: 'ZMW',

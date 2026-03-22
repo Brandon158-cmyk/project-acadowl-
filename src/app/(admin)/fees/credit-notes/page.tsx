@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,6 +19,7 @@ import { Plus, FileText, Check, ChevronsUpDown, Search, Download, CreditCard } f
 import { formatZMW } from '@/lib/utils/formatZMW';
 import { cn } from '@/lib/utils';
 import { api } from '../../../../../convex/_generated/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 
 const CREDIT_NOTE_TYPES = [
   { value: 'correction', label: 'Invoice Correction' },
@@ -44,7 +45,7 @@ export default function CreditNotesPage() {
 
   const creditNotes = useQuery(api.fees.creditNotes.getCreditNotes, { limit: 100 });
   const students = useQuery(
-    api.students.searchStudents,
+    api.students.queries.searchStudents,
     studentSearch.length >= 2 ? { query: studentSearch, limit: 10 } : 'skip'
   );
   const studentInvoices = useQuery(
@@ -62,12 +63,15 @@ export default function CreditNotesPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      const invoiceId = formData.applyToInvoiceId || undefined;
+      if (!invoiceId) {
+        throw new Error('Please select an invoice to apply the credit note to');
+      }
       await createCreditNote({
-        studentId: formData.studentId as any,
+        invoiceId: invoiceId as Id<'invoices'>,
         amountZMW: parseFloat(formData.amountZMW),
         reason: formData.reason,
         type: formData.type,
-        applyToInvoiceId: formData.applyToInvoiceId || undefined,
       });
       setIsAddOpen(false);
       setSelectedStudent(null);
@@ -146,7 +150,10 @@ export default function CreditNotesPage() {
           </div>
         ) : (
           <div className="py-12">
-            <Empty title="No credit notes" description="Issue credits for corrections, refunds, or adjustments" icon={CreditCard} />
+            <Empty>
+              <EmptyTitle>No credit notes</EmptyTitle>
+              <EmptyDescription>Issue credits for corrections, refunds, or adjustments</EmptyDescription>
+            </Empty>
           </div>
         )}
       </SectionCard>
@@ -161,7 +168,7 @@ export default function CreditNotesPage() {
             <div className="space-y-2">
               <Label className="text-[12px] text-text-secondary">Student</Label>
               <Popover>
-                <PopoverTrigger asChild>
+                <PopoverTrigger>
                   <Button variant="outline" className="w-full justify-between text-[13px]">
                     {selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : 'Search student...'}
                     <ChevronsUpDown className="h-4 w-4 opacity-50" />
@@ -202,7 +209,7 @@ export default function CreditNotesPage() {
                 <Label className="text-[12px] text-text-secondary">Apply to Invoice (Optional)</Label>
                 <Select
                   value={formData.applyToInvoiceId}
-                  onValueChange={(v) => setFormData({ ...formData, applyToInvoiceId: v })}
+                  onValueChange={(v) => setFormData({ ...formData, applyToInvoiceId: v || '' })}
                 >
                   <SelectTrigger className="text-[13px]">
                     <SelectValue placeholder="Select invoice or leave blank for credit balance" />

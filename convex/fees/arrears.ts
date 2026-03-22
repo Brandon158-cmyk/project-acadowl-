@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
-import { query, internalMutation } from '../_generated/server';
+import { query, mutation, internalMutation } from '../_generated/server';
 import { withSchoolScope } from '../_lib/schoolContext';
+import { requirePermission, Permission } from '../_lib/permissions';
 
 // Pure function: classify arrears aging bucket
 export function classifyArrears(
@@ -23,7 +24,7 @@ export function classifyArrears(
 
 export const getArrearsReport = query({
   args: {
-    termId: v.id('terms'),
+    termId: v.optional(v.id('terms')),
   },
   handler: async (ctx, args) => {
     return withSchoolScope(ctx, async ({ schoolId }) => {
@@ -33,10 +34,20 @@ export const getArrearsReport = query({
 
       const now = Date.now();
 
+      // If no termId provided, use the school's current term
+      let termId = args.termId;
+      if (!termId) {
+        const school = await ctx.db.get(schoolId);
+        termId = school?.currentTermId ?? undefined;
+        if (!termId) {
+          return { totalArrearsZMW: 0, studentCount: 0, byBucket: {}, students: [] };
+        }
+      }
+
       const invoices = await ctx.db
         .query('invoices')
         .withIndex('by_school_term', (q) =>
-          q.eq('schoolId', schoolId).eq('termId', args.termId),
+          q.eq('schoolId', schoolId).eq('termId', termId!),
         )
         .collect();
 
@@ -55,12 +66,15 @@ export const getArrearsReport = query({
       const students: Array<{
         studentId: string;
         studentName: string;
+        gradeName?: string;
+        guardianPhone?: string;
         invoiceNumber: string;
         invoiceId: string;
         balanceZMW: number;
         dueDate: number;
         daysOverdue: number;
         bucket: string;
+        lastReminderSent?: number;
       }> = [];
 
       for (const inv of overdueInvoices) {
@@ -76,17 +90,41 @@ export const getArrearsReport = query({
 
         const student = await ctx.db.get(inv.studentId);
 
+        // Fetch grade name if student has grade
+        let gradeName: string | undefined;
+        if (student?.currentGradeId) {
+          const grade = await ctx.db.get(student.currentGradeId);
+          gradeName = grade?.name;
+        }
+
+        // Fetch guardian phone if invoice has guardian
+        let guardianPhone: string | undefined;
+        if (inv.guardianId) {
+          const guardian = await ctx.db.get(inv.guardianId);
+          guardianPhone = guardian?.phone;
+        }
+
+        // Fetch last reminder sent for this invoice
+        const lastReminder = await ctx.db
+          .query('reminderLog')
+          .withIndex('by_invoice', (q) => q.eq('invoiceId', inv._id))
+          .order('desc')
+          .first();
+
         students.push({
           studentId: inv.studentId as string,
           studentName: student
             ? `${student.firstName} ${student.lastName}`
             : 'Unknown',
+          gradeName,
+          guardianPhone,
           invoiceNumber: inv.invoiceNumber,
           invoiceId: inv._id as string,
           balanceZMW: inv.balanceZMW,
           dueDate: inv.dueDate,
           daysOverdue,
           bucket,
+          lastReminderSent: lastReminder?.sentAt,
         });
       }
 
@@ -103,8 +141,56 @@ export const getArrearsReport = query({
   },
 });
 
+// Public mutation for sending reminders from the frontend
+export const sendReminders = mutation({
+  args: {
+    studentIds: v.array(v.id('students')),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId, role }) => {
+      requirePermission(role, Permission.MANAGE_SETTINGS);
+      if (!schoolId) throw new Error('School context required');
+
+      const now = Date.now();
+      let sent = 0;
+
+      for (const studentId of args.studentIds) {
+        const invoices = await ctx.db
+          .query('invoices')
+          .withIndex('by_student', (q) => q.eq('studentId', studentId))
+          .filter((q) =>
+            q.and(
+              q.eq(q.field('schoolId'), schoolId),
+              q.neq(q.field('status'), 'void'),
+              q.neq(q.field('status'), 'paid'),
+              q.gt(q.field('balanceZMW'), 0),
+            ),
+          )
+          .collect();
+
+        for (const invoice of invoices) {
+          if (!invoice.guardianId) continue;
+          if (invoice.dueDate >= now) continue;
+
+          await ctx.db.insert('reminderLog', {
+            schoolId,
+            invoiceId: invoice._id,
+            guardianId: invoice.guardianId,
+            reminderType: 'manual_reminder',
+            channel: 'sms',
+            sentAt: now,
+          });
+          sent++;
+        }
+      }
+
+      return { sent };
+    });
+  },
+});
+
 // Reminder engine — runs as a scheduled cron job
-export const processReminderEngine = internalMutation({
+export const processReminderEngineInternal = internalMutation({
   args: {
     schoolId: v.id('schools'),
   },

@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { query } from '../_generated/server';
+import { Id } from '../_generated/dataModel';
 import { withSchoolScope } from '../_lib/schoolContext';
 import { getPrimaryGuardianId } from './_helpers';
 
@@ -68,8 +69,10 @@ export const getGuardianChildrenForTerm = query({
 
 // Query: get sibling groups for the whole school (admin view)
 export const getSiblingGroups = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    termId: v.optional(v.id('terms')),
+  },
+  handler: async (ctx, args) => {
     return withSchoolScope(ctx, async ({ schoolId }) => {
       if (!schoolId) return [];
 
@@ -117,10 +120,13 @@ export const getSiblingGroups = query({
         guardianName: string;
         children: Array<{
           studentId: string;
-          name: string;
-          childIndex: number;
+          studentName: string;
+          gradeName: string;
+          rank: number;
           discountPercent: number;
         }>;
+        totalExpectedFees: number;
+        totalDiscount: number;
       }> = [];
 
       for (const [guardianId, children] of guardianMap) {
@@ -135,18 +141,54 @@ export const getSiblingGroups = query({
           (a, b) => a.enrolledAt - b.enrolledAt,
         );
 
-        groups.push({
-          guardianId,
-          guardianName,
-          children: sortedChildren.map((child, index) => {
+        // Calculate fees for each child
+        let groupTotalFees = 0;
+        let groupTotalDiscount = 0;
+
+        const childrenWithDetails = await Promise.all(
+          sortedChildren.map(async (child, index) => {
             const discount = calculateSiblingDiscount(index, rules);
+
+            // Get grade name
+            const studentDoc = await ctx.db.get(child.studentId as Id<'students'>);
+            const grade = studentDoc?.currentGradeId
+              ? await ctx.db.get(studentDoc.currentGradeId)
+              : null;
+            const gradeName = grade?.name ?? 'Unknown';
+
+            // Calculate expected fees for this child
+            // Note: Actual fees come from feeStructures table, not grade
+            // For estimation purposes, we query the fee structure for this grade
+            let baseFee = 0;
+            if (args.termId) {
+              const feeStructure = await ctx.db
+                .query('feeStructures')
+                .withIndex('by_term_grade', q => 
+                  q.eq('schoolId', schoolId).eq('termId', args.termId)
+                )
+                .filter(q => q.eq(q.field('gradeId'), studentDoc?.currentGradeId))
+                .first();
+              baseFee = feeStructure?.amountZMW ?? 0;
+            }
+            groupTotalFees += baseFee;
+            groupTotalDiscount += baseFee * (discount.discountPercent / 100);
+
             return {
               studentId: child.studentId,
-              name: `${child.firstName} ${child.lastName}`,
-              childIndex: index,
+              studentName: `${child.firstName} ${child.lastName}`,
+              gradeName,
+              rank: index + 1,
               discountPercent: discount.discountPercent,
             };
           }),
+        );
+
+        groups.push({
+          guardianId,
+          guardianName,
+          children: childrenWithDetails,
+          totalExpectedFees: groupTotalFees,
+          totalDiscount: groupTotalDiscount,
         });
       }
 

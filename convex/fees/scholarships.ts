@@ -4,8 +4,10 @@ import { withSchoolScope } from '../_lib/schoolContext';
 import { requirePermission, Permission } from '../_lib/permissions';
 
 export const getScholarships = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
     return withSchoolScope(ctx, async ({ schoolId }) => {
       if (!schoolId) return [];
       const scholarships = await ctx.db
@@ -13,8 +15,10 @@ export const getScholarships = query({
         .withIndex('by_school', (q) => q.eq('schoolId', schoolId))
         .collect();
 
+      const limited = args.limit ? scholarships.slice(0, args.limit) : scholarships;
+
       return Promise.all(
-        scholarships.map(async (s) => {
+        limited.map(async (s) => {
           const student = await ctx.db.get(s.studentId);
           return {
             ...s,
@@ -53,7 +57,7 @@ export const createScholarship = mutation({
   args: {
     studentId: v.id('students'),
     name: v.string(),
-    provider: v.string(),
+    provider: v.optional(v.string()),
     discountType: v.union(
       v.literal('full'),
       v.literal('partial_percent'),
@@ -61,9 +65,13 @@ export const createScholarship = mutation({
     ),
     discountPercent: v.optional(v.number()),
     discountFixedZMW: v.optional(v.number()),
-    applyToFeeTypes: v.array(v.string()),
-    validFrom: v.string(),
-    validTo: v.string(),
+    discountAmountZMW: v.optional(v.number()),
+    applyToFeeTypes: v.optional(v.array(v.string())),
+    applicableFeeTypes: v.optional(v.array(v.string())),
+    validFrom: v.optional(v.string()),
+    validTo: v.optional(v.string()),
+    startDate: v.optional(v.number()),
+    endDate: v.optional(v.number()),
     notes: v.optional(v.string()),
     documentUrl: v.optional(v.string()),
   },
@@ -77,6 +85,13 @@ export const createScholarship = mutation({
         throw new Error('Student not found');
       }
 
+      // Resolve aliased fields (frontend sends different names)
+      const fixedZMW = args.discountFixedZMW ?? args.discountAmountZMW;
+      const feeTypes = args.applyToFeeTypes ?? args.applicableFeeTypes ?? [];
+      const validFrom = args.validFrom ?? (args.startDate ? new Date(args.startDate).toISOString().split('T')[0] : '');
+      const validTo = args.validTo ?? (args.endDate ? new Date(args.endDate).toISOString().split('T')[0] : '');
+      const provider = args.provider ?? '';
+
       if (
         args.discountType === 'partial_percent' &&
         (args.discountPercent === undefined || args.discountPercent <= 0 || args.discountPercent > 100)
@@ -86,7 +101,7 @@ export const createScholarship = mutation({
 
       if (
         args.discountType === 'partial_fixed' &&
-        (args.discountFixedZMW === undefined || args.discountFixedZMW <= 0)
+        (fixedZMW === undefined || fixedZMW <= 0)
       ) {
         throw new Error('Partial fixed scholarship requires a valid fixed amount');
       }
@@ -95,13 +110,13 @@ export const createScholarship = mutation({
         schoolId,
         studentId: args.studentId,
         name: args.name,
-        provider: args.provider,
+        provider,
         discountType: args.discountType,
         discountPercent: args.discountPercent,
-        discountFixedZMW: args.discountFixedZMW,
-        applyToFeeTypes: args.applyToFeeTypes,
-        validFrom: args.validFrom,
-        validTo: args.validTo,
+        discountFixedZMW: fixedZMW,
+        applyToFeeTypes: feeTypes,
+        validFrom,
+        validTo,
         notes: args.notes,
         documentUrl: args.documentUrl,
         isActive: true,
@@ -114,7 +129,7 @@ export const createScholarship = mutation({
         action: 'scholarship_applied',
         performedBy: userId,
         relatedStudentId: args.studentId,
-        notes: `Scholarship "${args.name}" from ${args.provider} — ${args.discountType}`,
+        notes: `Scholarship "${args.name}" from ${provider} — ${args.discountType}`,
         createdAt: Date.now(),
       });
 

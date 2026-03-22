@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -97,8 +97,8 @@ export default function FeeStructurePage() {
     }
   };
 
-  const handleCopyToTerm = async (structureId: string, targetTermId: string) => {
-    await copyToTerm({ sourceStructureId: structureId as any, targetTermId: targetTermId as any });
+  const handleCopyToTerm = async (sourceTermId: string, targetTermId: string) => {
+    await copyToTerm({ sourceTermId: sourceTermId as any, targetTermId: targetTermId as any });
   };
 
   if (terms === undefined || grades === undefined) {
@@ -129,7 +129,7 @@ export default function FeeStructurePage() {
       <div className="flex flex-wrap gap-4 p-4 bg-white border border-border-panel rounded-lg">
         <div className="grid gap-2">
           <Label className="text-[12px] text-text-secondary">Term</Label>
-          <Select value={selectedTermId} onValueChange={setSelectedTermId}>
+          <Select value={selectedTermId} onValueChange={(v) => setSelectedTermId(v ?? '')}>
             <SelectTrigger className="w-[200px] text-[13px]">
               <SelectValue placeholder="Select term" />
             </SelectTrigger>
@@ -144,7 +144,7 @@ export default function FeeStructurePage() {
         </div>
         <div className="grid gap-2">
           <Label className="text-[12px] text-text-secondary">Grade</Label>
-          <Select value={selectedGradeId} onValueChange={setSelectedGradeId}>
+          <Select value={selectedGradeId} onValueChange={(v) => setSelectedGradeId(v ?? '')}>
             <SelectTrigger className="w-[200px] text-[13px]">
               <SelectValue placeholder="Select grade" />
             </SelectTrigger>
@@ -219,7 +219,7 @@ export default function FeeStructurePage() {
                         </TableCell>
                         <TableCell className="px-4 py-3">
                           {structure.instalmentSchedule && structure.instalmentSchedule.length > 0 ? (
-                            <Accordion type="single" collapsible className="w-full">
+                            <Accordion collapsible className="w-full">
                               <AccordionItem value="instalments" className="border-0">
                                 <AccordionTrigger className="py-0 text-[12px] text-accent hover:no-underline">
                                   {structure.instalmentSchedule.length} instalments
@@ -269,23 +269,24 @@ export default function FeeStructurePage() {
               </div>
             ) : (
               <div className="py-12">
-                <Empty
-                  title="No fee items configured"
-                  description="Add fee items for this term and grade"
-                  icon={Plus}
-                  action={
-                    <Button
-                      onClick={() => {
-                        resetForm();
-                        setIsAddDialogOpen(true);
-                      }}
-                      className="gap-2 bg-accent hover:bg-accent-hover"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Fee Item
-                    </Button>
-                  }
-                />
+                <Empty>
+                  
+                    <EmptyTitle>No fee items configured</EmptyTitle>
+                    <EmptyDescription>Add fee items for this term and grade</EmptyDescription>
+                   
+                      <Button
+                        onClick={() => {
+                          resetForm();
+                          setIsAddDialogOpen(true);
+                        }}
+                        className="gap-2 bg-accent hover:bg-accent-hover"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Fee Item
+                      </Button>
+                  
+                </Empty>
+                
               </div>
             )
           ) : (
@@ -312,7 +313,7 @@ export default function FeeStructurePage() {
                 <Label className="text-[12px] text-text-secondary">Term</Label>
                 <Select
                   value={formData.termId}
-                  onValueChange={(v) => setFormData({ ...formData, termId: v })}
+                  onValueChange={(v) => setFormData({ ...formData, termId: v || '' })}
                 >
                   <SelectTrigger className="text-[13px]">
                     <SelectValue />
@@ -330,7 +331,7 @@ export default function FeeStructurePage() {
                 <Label className="text-[12px] text-text-secondary">Grade</Label>
                 <Select
                   value={formData.gradeId}
-                  onValueChange={(v) => setFormData({ ...formData, gradeId: v })}
+                  onValueChange={(v) => setFormData({ ...formData, gradeId: v || '' })}
                 >
                   <SelectTrigger className="text-[13px]">
                     <SelectValue />
@@ -350,7 +351,7 @@ export default function FeeStructurePage() {
               <Label className="text-[12px] text-text-secondary">Fee Type</Label>
               <Select
                 value={formData.feeTypeId}
-                onValueChange={(v) => setFormData({ ...formData, feeTypeId: v })}
+                onValueChange={(v) => setFormData({ ...formData, feeTypeId: v || '' })}
               >
                 <SelectTrigger className="text-[13px]">
                   <SelectValue placeholder="Select fee type" />

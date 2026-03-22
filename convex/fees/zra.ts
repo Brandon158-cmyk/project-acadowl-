@@ -171,8 +171,8 @@ export const submitCreditNoteToZra = internalMutation({
   },
 });
 
-// ─── Resubmit Failed Invoices to ZRA ───
-export const resubmitFailedToZra = mutation({
+// ─── Resubmit Single Invoice to ZRA ───
+export const resubmitInvoiceToZra = mutation({
   args: {
     invoiceId: v.id('invoices'),
   },
@@ -190,18 +190,49 @@ export const resubmitFailedToZra = mutation({
         throw new Error('Only failed ZRA submissions can be resubmitted');
       }
 
-      // Reset status to pending and re-trigger
       await ctx.db.patch(args.invoiceId, {
         zraStatus: 'pending',
         updatedAt: Date.now(),
       });
 
-      // Schedule the ZRA submission
       const { internal } = await import('../_generated/api');
       await ctx.scheduler.runAfter(0, internal.fees.zra.submitInvoiceToZraVsdc, {
         schoolId,
         invoiceId: args.invoiceId,
       });
+    });
+  },
+});
+
+// ─── Bulk Resubmit All Failed Invoices to ZRA ───
+export const resubmitFailedToZra = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return withSchoolScope(ctx, async ({ schoolId, role }) => {
+      requirePermission(role, Permission.CREATE_INVOICE);
+      if (!schoolId) throw new Error('School context required');
+
+      const failedInvoices = await ctx.db
+        .query('invoices')
+        .withIndex('by_school', (q) => q.eq('schoolId', schoolId))
+        .filter((q) => q.eq(q.field('zraStatus'), 'failed'))
+        .collect();
+
+      const { internal } = await import('../_generated/api');
+      const now = Date.now();
+
+      for (const invoice of failedInvoices) {
+        await ctx.db.patch(invoice._id, {
+          zraStatus: 'pending',
+          updatedAt: now,
+        });
+        await ctx.scheduler.runAfter(0, internal.fees.zra.submitInvoiceToZraVsdc, {
+          schoolId,
+          invoiceId: invoice._id,
+        });
+      }
+
+      return { resubmitted: failedInvoices.length };
     });
   },
 });
@@ -235,13 +266,8 @@ export const getZraComplianceStatus = query({
     return withSchoolScope(ctx, async ({ schoolId }) => {
       if (!schoolId) {
         return {
-          totalInvoices: 0,
-          submitted: 0,
-          accepted: 0,
-          failed: 0,
-          pending: 0,
-          notRequired: 0,
-          isMockMode: true,
+          summary: { total: 0, submitted: 0, failed: 0, notSubmitted: 0, mock: 0 },
+          invoices: [],
         };
       }
 
@@ -257,25 +283,45 @@ export const getZraComplianceStatus = query({
 
       const activeInvoices = invoices.filter((inv) => inv.status !== 'void');
 
-      const counts = {
-        submitted: 0,
-        accepted: 0,
-        failed: 0,
-        pending: 0,
-        notRequired: 0,
-      };
+      let submitted = 0;
+      let failed = 0;
+      let notSubmitted = 0;
+      let mock = 0;
 
-      for (const inv of activeInvoices) {
-        const status = inv.zraStatus ?? 'pending';
-        if (status in counts) {
-          counts[status as keyof typeof counts]++;
-        }
-      }
+      const enrichedInvoices = await Promise.all(
+        activeInvoices.map(async (inv) => {
+          const student = await ctx.db.get(inv.studentId);
+          const status = inv.zraStatus ?? 'not_required';
+
+          if (status === 'accepted') submitted++;
+          else if (status === 'failed') failed++;
+          else if (status === 'not_required' || status === 'pending') notSubmitted++;
+
+          if (inv.isMockFiscalCode) mock++;
+
+          return {
+            _id: inv._id,
+            invoiceNumber: inv.invoiceNumber,
+            studentName: student
+              ? `${student.firstName} ${student.lastName}`
+              : 'Unknown',
+            totalZMW: inv.totalZMW,
+            zraStatus: status,
+            fiscalCode: inv.zraFiscalCode ?? null,
+            zraErrorMessage: (inv as any).zraErrorMessage ?? null,
+          };
+        }),
+      );
 
       return {
-        totalInvoices: activeInvoices.length,
-        ...counts,
-        isMockMode,
+        summary: {
+          total: activeInvoices.length,
+          submitted,
+          failed,
+          notSubmitted,
+          mock,
+        },
+        invoices: enrichedInvoices,
       };
     });
   },

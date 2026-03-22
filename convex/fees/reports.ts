@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { query } from '../_generated/server';
+import { Id } from '../_generated/dataModel';
 import { withSchoolScope } from '../_lib/schoolContext';
 import { getPrimaryGuardianId } from './_helpers';
 
@@ -172,6 +173,86 @@ export const getTermFinancialSummaryReport = query({
         creditNotes: { count: termCreditNotes.length, totalZMW: cnTotalCents / 100 },
         arrears: { count: arrearsCount, totalZMW: arrearsCents / 100 },
       };
+    });
+  },
+});
+
+export const getOutstandingBalancesReport = query({
+  args: {
+    termId: v.id('terms'),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId }) => {
+      if (!schoolId) return [];
+
+      const invoices = await ctx.db
+        .query('invoices')
+        .withIndex('by_school_term', (q) =>
+          q.eq('schoolId', schoolId).eq('termId', args.termId),
+        )
+        .collect();
+
+      const activeInvoices = invoices.filter(
+        (inv) => inv.status !== 'void' && inv.status !== 'paid' && inv.balanceZMW > 0,
+      );
+
+      // Aggregate by student and track grade for percentage calc
+      const studentMap = new Map<
+        string,
+        { totalBalanceCents: number; invoiceCount: number; gradeId: Id<'grades'> | null }
+      >();
+      const gradeTotals = new Map<Id<'grades'>, number>();
+
+      for (const inv of activeInvoices) {
+        const student = await ctx.db.get(inv.studentId);
+        const gradeId = student?.currentGradeId ?? null;
+        const key = inv.studentId as string;
+        
+        if (!studentMap.has(key)) {
+          studentMap.set(key, { totalBalanceCents: 0, invoiceCount: 0, gradeId });
+        }
+        const entry = studentMap.get(key)!;
+        entry.totalBalanceCents += Math.round(inv.balanceZMW * 100);
+        entry.invoiceCount++;
+
+        // Accumulate grade totals
+        if (gradeId) {
+          gradeTotals.set(gradeId, (gradeTotals.get(gradeId) ?? 0) + Math.round(inv.balanceZMW * 100));
+        }
+      }
+
+      // Sort by outstanding desc and limit
+      const sorted = Array.from(studentMap.entries())
+        .sort((a, b) => b[1].totalBalanceCents - a[1].totalBalanceCents)
+        .slice(0, args.limit ?? 20);
+
+      return Promise.all(
+        sorted.map(async ([studentId, data]) => {
+          const student = await ctx.db.get(studentId as any) as any;
+          const grade = data.gradeId
+            ? await ctx.db.get(data.gradeId)
+            : null;
+          
+          // Calculate percentage of grade total
+          const gradeTotalCents = data.gradeId ? (gradeTotals.get(data.gradeId as Id<'grades'>) ?? 0) : 0;
+          const percentOfGradeTotal = gradeTotalCents > 0
+            ? Math.round((data.totalBalanceCents / gradeTotalCents) * 10000) / 100
+            : 0;
+          
+          return {
+            studentId,
+            studentName: student
+              ? `${student.firstName} ${student.lastName}`
+              : 'Unknown',
+            studentNumber: student?.studentNumber ?? '',
+            gradeName: grade ? (grade as any).name : 'Unknown',
+            outstandingZMW: data.totalBalanceCents / 100,
+            invoiceCount: data.invoiceCount,
+            percentOfGradeTotal,
+          };
+        }),
+      );
     });
   },
 });

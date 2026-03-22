@@ -241,6 +241,71 @@ export const getGuardianCreditBalance = query({
   },
 });
 
+export const getCreditNotes = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId }) => {
+      if (!schoolId) return [];
+
+      const allNotes = await ctx.db
+        .query('creditNotes')
+        .withIndex('by_school', (q) => q.eq('schoolId', schoolId))
+        .order('desc')
+        .collect();
+
+      const limited = args.limit ? allNotes.slice(0, args.limit) : allNotes;
+
+      return Promise.all(
+        limited.map(async (cn) => {
+          const student = await ctx.db.get(cn.studentId);
+          const invoice = await ctx.db.get(cn.invoiceId);
+          const authoriser = cn.authorisedBy ? await ctx.db.get(cn.authorisedBy) : null;
+          return {
+            ...cn,
+            studentName: student
+              ? `${student.firstName} ${student.lastName}`
+              : 'Unknown',
+            invoiceNumber: invoice?.invoiceNumber ?? 'N/A',
+            authoriserName: authoriser
+              ? `${(authoriser as any).firstName ?? ''} ${(authoriser as any).lastName ?? ''}`.trim()
+              : 'System',
+            remainingZMW: cn.status === 'issued' ? cn.amountZMW : 0,
+          };
+        }),
+      );
+    });
+  },
+});
+
+export const getCreditNotesForStudent = query({
+  args: {
+    studentId: v.id('students'),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId }) => {
+      if (!schoolId) return [];
+
+      const notes = await ctx.db
+        .query('creditNotes')
+        .withIndex('by_school', (q) => q.eq('schoolId', schoolId))
+        .filter((q) => q.eq(q.field('studentId'), args.studentId))
+        .collect();
+
+      return Promise.all(
+        notes.map(async (cn) => {
+          const invoice = await ctx.db.get(cn.invoiceId);
+          return {
+            ...cn,
+            invoiceNumber: invoice?.invoiceNumber ?? 'N/A',
+          };
+        }),
+      );
+    });
+  },
+});
+
 export const getCreditNotesForInvoice = query({
   args: {
     invoiceId: v.id('invoices'),

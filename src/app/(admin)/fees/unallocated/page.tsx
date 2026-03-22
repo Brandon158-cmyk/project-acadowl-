@@ -8,12 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyTitle, EmptyDescription} from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { AlertTriangle, Link2, RotateCcw, XCircle, Banknote, Smartphone, Search } from 'lucide-react';
+import { AlertTriangle, Link2, RotateCcw, Banknote, Search, Check } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { formatZMW } from '@/lib/utils/formatZMW';
 import { format } from 'date-fns';
+import { api } from '../../../../../convex/_generated/api';
+import { Id } from '../../../../../convex/_generated/dataModel';
 
 const PAYMENT_METHODS: Record<string, string> = {
   airtel_money: 'Airtel Money',
@@ -28,7 +31,7 @@ export default function UnallocatedPaymentsPage() {
   const [selectedInvoice, setSelectedInvoice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const unallocated = useQuery(api.fees.unallocatedPayments.getUnallocatedPayments);
+  const unallocated = useQuery(api.fees.unallocatedPayments.getUnallocatedPayments, {});
   const allocatePayment = useMutation(api.fees.unallocatedPayments.allocatePayment);
   const markAsRefunded = useMutation(api.fees.unallocatedPayments.markAsRefunded);
 
@@ -53,7 +56,7 @@ export default function UnallocatedPaymentsPage() {
     }
   };
 
-  const handleRefund = async (paymentId: string) => {
+  const handleRefund = async (paymentId: Id<'unallocatedPayments'>) => {
     if (confirm('Mark this payment as refunded?')) {
       await markAsRefunded({ unallocatedPaymentId: paymentId });
     }
@@ -203,11 +206,11 @@ export default function UnallocatedPaymentsPage() {
           </div>
         ) : (
           <div className="py-12">
-            <Empty
-              title="No unallocated payments"
-              description="All mobile money payments have been matched to invoices"
-              icon={Banknote}
-            />
+            <Empty>
+              <EmptyTitle>No unallocated payments</EmptyTitle>
+              <EmptyDescription>All mobile money payments have been matched to invoices</EmptyDescription>
+             
+            </Empty>
           </div>
         )}
       </SectionCard>
@@ -293,9 +296,6 @@ export default function UnallocatedPaymentsPage() {
   );
 }
 
-import { Check } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { api } from '../../../../../convex/_generated/api';
 
 function UnallocatedSkeleton() {
   return (

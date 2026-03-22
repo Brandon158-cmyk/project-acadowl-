@@ -15,11 +15,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Plus, Search, FileText, Send, Ban, Eye, RotateCcw, AlertCircle } from 'lucide-react';
+import { Plus, Search, Send, Ban, Eye, RotateCcw, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { formatZMW } from '@/lib/utils/formatZMW';
 import { api } from '../../../../../convex/_generated/api';
@@ -117,7 +117,7 @@ export default function InvoicesPage() {
             />
           </div>
         </div>
-        <Select value={selectedTermId} onValueChange={setSelectedTermId}>
+        <Select value={selectedTermId || ''} onValueChange={(value) => setSelectedTermId(value || null as any)}>
           <SelectTrigger className="w-[180px] text-[13px]">
             <SelectValue placeholder="Select term" />
           </SelectTrigger>
@@ -129,7 +129,7 @@ export default function InvoicesPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value || 'all')}>
           <SelectTrigger className="w-[140px] text-[13px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -262,21 +262,19 @@ export default function InvoicesPage() {
               </div>
             ) : (
               <div className="py-12">
-                <Empty
-                  title="No invoices found"
-                  description={searchQuery ? 'Try adjusting your search' : 'Generate invoices for this term'}
-                  icon={FileText}
-                  action={
-                    !searchQuery && (
-                      <Button className="gap-2 bg-accent hover:bg-accent-hover">
-                        <Link href="/fees/invoices/bulk">
-                          <Plus className="h-4 w-4" />
-                          Generate Invoices
+                <Empty>
+                  <EmptyTitle>No invoices found</EmptyTitle>
+                  <EmptyDescription>{searchQuery ? 'Try adjusting your search' : 'Generate invoices for this term'}</EmptyDescription>
+                  {!searchQuery && (
+                    <Button className="gap-2 bg-accent hover:bg-accent-hover">
+                      <Link href="/fees/invoices/bulk">
+                        <Plus className="h-4 w-4" />
+                        Generate Invoices
                         </Link>
                       </Button>
-                    )
-                  }
-                />
+                    )}
+                  
+                </Empty>
               </div>
             )
           ) : (

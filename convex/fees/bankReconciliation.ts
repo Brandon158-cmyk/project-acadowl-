@@ -18,29 +18,50 @@ export const getBankStatementImports = query({
 
 export const importBankStatement = mutation({
   args: {
-    bankName: v.string(),
-    accountNumber: v.string(),
-    statementPeriodFrom: v.string(),
-    statementPeriodTo: v.string(),
-    fileUrl: v.string(),
-    transactions: v.array(
-      v.object({
-        date: v.string(),
-        description: v.string(),
-        amountZMW: v.number(),
-        reference: v.optional(v.string()),
-      }),
-    ),
+    csvContent: v.string(),
+    bankFormat: v.string(),
   },
   handler: async (ctx, args) => {
     return withSchoolScope(ctx, async ({ schoolId, userId, role }) => {
       requirePermission(role, Permission.PROCESS_PAYMENTS);
       if (!schoolId) throw new Error('School context required');
 
+      // Parse CSV content
+      const lines = args.csvContent.split('\n').filter(line => line.trim());
+      const transactions: Array<{
+        date: string;
+        description: string;
+        amountZMW: number;
+        reference?: string;
+      }> = [];
+
+      // Skip header row and parse data rows
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        const columns = line.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+        
+        if (columns.length >= 3) {
+          // Generic CSV format: Date, Description, Amount (credit), Reference (optional)
+          const date = columns[0];
+          const description = columns[1];
+          const amountStr = columns[2];
+          const reference = columns[3] || undefined;
+          
+          const amountZMW = parseFloat(amountStr);
+          if (!isNaN(amountZMW) && amountZMW > 0) {
+            transactions.push({ date, description, amountZMW, reference });
+          }
+        }
+      }
+
+      const bankName = args.bankFormat.replace(/_/g, ' ').replace(/csv/i, '').trim();
+      const statementPeriodFrom = transactions.length > 0 ? transactions[0].date : '';
+      const statementPeriodTo = transactions.length > 0 ? transactions[transactions.length - 1].date : '';
+
       let matchedCount = 0;
       let unmatchedCount = 0;
 
-      for (const txn of args.transactions) {
+      for (const txn of transactions) {
         // Try to auto-match by reference to invoice number
         let matched = false;
         if (txn.reference) {
@@ -127,22 +148,22 @@ export const importBankStatement = mutation({
 
       const importId = await ctx.db.insert('bankStatementImports', {
         schoolId,
-        bankName: args.bankName,
-        accountNumber: args.accountNumber,
-        statementPeriodFrom: args.statementPeriodFrom,
-        statementPeriodTo: args.statementPeriodTo,
-        totalTransactions: args.transactions.length,
+        bankName,
+        accountNumber: '',
+        statementPeriodFrom,
+        statementPeriodTo,
+        totalTransactions: transactions.length,
         matchedTransactions: matchedCount,
         unmatchedTransactions: unmatchedCount,
         uploadedBy: userId,
         uploadedAt: Date.now(),
-        fileUrl: args.fileUrl,
+        fileUrl: '',
         status: unmatchedCount > 0 ? 'pending_review' : 'reconciled',
       });
 
       return {
         importId,
-        totalTransactions: args.transactions.length,
+        totalTransactions: transactions.length,
         matchedTransactions: matchedCount,
         unmatchedTransactions: unmatchedCount,
       };

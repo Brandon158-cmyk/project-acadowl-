@@ -5,24 +5,19 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent} from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import {
   Receipt,
   Banknote,
   AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Users,
   FileText,
-  CreditCard,
   Landmark,
   Smartphone,
   ArrowRight,
   Plus,
-  Calendar,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatZMW } from '@/lib/utils/formatZMW';
@@ -31,11 +26,6 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
 } from 'recharts';
 import { api } from '../../../../../convex/_generated/api';
@@ -228,11 +218,10 @@ export default function FinanceDashboardPage() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <Empty
-                title="No payment data"
-                description="Payments will appear here once recorded"
-                icon={CreditCard}
-              />
+              <Empty>
+                <EmptyTitle>No payment data</EmptyTitle>
+                <EmptyDescription>Payments will appear here once recorded</EmptyDescription>
+              </Empty>
             )}
             {/* Legend */}
             <div className="mt-4 flex flex-wrap gap-4 justify-center">
@@ -299,11 +288,10 @@ export default function FinanceDashboardPage() {
               ))
             ) : (
               <div className="px-5 py-8">
-                <Empty
-                  title="No recent payments"
-                  description="Payments will appear here once recorded"
-                  icon={Banknote}
-                />
+                <Empty>
+                  <EmptyTitle>No recent payments</EmptyTitle>
+                  <EmptyDescription>Payments will appear here once recorded</EmptyDescription>
+                </Empty>
               </div>
             )}
           </div>

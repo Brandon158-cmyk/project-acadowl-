@@ -42,6 +42,19 @@ export const getCollectionAnalytics = query({
         entry.count++;
       }
 
+      // Compute totals
+      let totalInvoicedCents = 0;
+      let totalCollectedCents = 0;
+      for (const inv of activeInvoices) {
+        totalInvoicedCents += Math.round(inv.totalZMW * 100);
+        totalCollectedCents += Math.round(inv.paidZMW * 100);
+      }
+      const totalOutstandingCents = totalInvoicedCents - totalCollectedCents;
+      const overallCollectionRate =
+        totalInvoicedCents > 0
+          ? Math.round((totalCollectedCents / totalInvoicedCents) * 10000) / 100
+          : 0;
+
       const byGrade = await Promise.all(
         Array.from(gradeMap.entries()).map(async ([gradeId, data]) => {
           const grade = await ctx.db.get(gradeId as any);
@@ -49,6 +62,7 @@ export const getCollectionAnalytics = query({
             gradeId,
             gradeName: grade ? (grade as any).name : 'Unknown',
             invoicedZMW: data.invoicedCents / 100,
+            expectedZMW: data.invoicedCents / 100,
             collectedZMW: data.collectedCents / 100,
             outstandingZMW: (data.invoicedCents - data.collectedCents) / 100,
             collectionRate:
@@ -91,7 +105,14 @@ export const getCollectionAnalytics = query({
         }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
-      return { byGrade, dailyCollections };
+      return {
+        totalExpected: totalInvoicedCents / 100,
+        totalCollected: totalCollectedCents / 100,
+        totalOutstanding: totalOutstandingCents / 100,
+        collectionRate: overallCollectionRate,
+        byGrade,
+        dailyCollections,
+      };
     });
   },
 });
@@ -124,15 +145,12 @@ export const getPaymentMethodTrends = query({
         entry.totalCents += Math.round(p.amountZMW * 100);
       }
 
-      const methods = Array.from(methodMap.entries()).map(
-        ([method, data]) => ({
-          method,
-          count: data.count,
-          totalZMW: data.totalCents / 100,
-        }),
-      );
+      const result: Record<string, number> = {};
+      for (const [method, data] of methodMap.entries()) {
+        result[method] = data.totalCents / 100;
+      }
 
-      return { methods };
+      return result;
     });
   },
 });
