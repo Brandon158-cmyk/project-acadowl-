@@ -70,6 +70,7 @@ import type * as schools_timetable from "../schools/timetable.js";
 import type * as schools_validators from "../schools/validators.js";
 import type * as seed from "../seed.js";
 import type * as seedComprehensive from "../seedComprehensive.js";
+import type * as seedDev from "../seedDev.js";
 import type * as students__helpers from "../students/_helpers.js";
 import type * as students_mutations from "../students/mutations.js";
 import type * as students_portal from "../students/portal.js";
@@ -149,6 +150,7 @@ declare const fullApi: ApiFromModules<{
   "schools/validators": typeof schools_validators;
   seed: typeof seed;
   seedComprehensive: typeof seedComprehensive;
+  seedDev: typeof seedDev;
   "students/_helpers": typeof students__helpers;
   "students/mutations": typeof students_mutations;
   "students/portal": typeof students_portal;

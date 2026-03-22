@@ -373,6 +373,27 @@ const WEEK_DATA = [
 export default function AdminDashboardPage() {
   const stats = useQuery(api.schools.dashboardQueries.getDashboardStats);
   if (stats === undefined) return <PageSkeleton />;
+  if (stats === null) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="h-12 w-12 rounded-full bg-error-bg flex items-center justify-center">
+          <span className="text-2xl">🔒</span>
+        </div>
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-text-primary">Authentication Required</h2>
+          <p className="text-sm text-text-secondary mt-1">
+            Please sign in to view the dashboard.
+          </p>
+        </div>
+        <a
+          href="/login"
+          className="px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
+        >
+          Go to Login
+        </a>
+      </div>
+    );
+  }
 
   const rate = stats.attendanceRate ?? 0;
   const present = stats.totalMarkedToday;

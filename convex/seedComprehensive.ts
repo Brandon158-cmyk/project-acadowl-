@@ -1,6 +1,7 @@
 import { internalMutation, internalAction } from './_generated/server';
 import { internal } from './_generated/api';
 import { Id } from './_generated/dataModel';
+import { v } from 'convex/values';
 import {
   MALE_NAMES, FEMALE_NAMES, LAST_NAMES, ECZ_GRADING_SCALE, GPA_GRADING_SCALE,
   FEE_TYPES_TEMPLATE, SUBJECTS_SECONDARY, SUBJECTS_COLLEGE, SUBJECTS_PRIMARY,
@@ -1632,11 +1633,24 @@ export const seedPhase6_Extras = internalMutation({
 });
 
 // ════════════════════════════════════════════════════════════════════════
-// Clear All Seed Data — Wipes every table in the database
+// Clear All Seed Data — Wipes every table in batches to avoid limits
 // ════════════════════════════════════════════════════════════════════════
 
-export const clearAllData = internalMutation({
-  handler: async (ctx) => {
+export const clearTableBatch = internalMutation({
+  args: { table: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { table, limit = 500 }) => {
+    // @ts-ignore - dynamic table access
+    const docs = await ctx.db.query(table).take(limit);
+    for (const doc of docs) {
+      // @ts-ignore
+      await ctx.db.delete(doc._id);
+    }
+    return { deleted: docs.length, table, hasMore: docs.length === limit };
+  },
+});
+
+export const clearAllData = internalAction({
+  handler: async (ctx): Promise<Record<string, unknown>> => {
     const tables = [
       'lmsSubmissions', 'lmsLessons', 'lmsModules', 'lmsCourses',
       'libraryIssues', 'libraryBooks',
@@ -1656,18 +1670,24 @@ export const clearAllData = internalMutation({
       'terms', 'academicYears',
       'platformAdmins', 'students', 'guardians', 'staff', 'users',
       'schools',
-    ] as const;
+    ];
 
     let totalDeleted = 0;
     for (const table of tables) {
-      const docs = await ctx.db.query(table as any).collect();
-      for (const doc of docs) {
-        await ctx.db.delete(doc._id as any);
-        totalDeleted++;
+      let hasMore = true;
+      let batchCount = 0;
+      while (hasMore && batchCount < 20) { // safety limit
+        const result = await ctx.runMutation(internal.seedComprehensive.clearTableBatch, { table, limit: 500 }) as { deleted: number; hasMore: boolean };
+        totalDeleted += result.deleted;
+        hasMore = result.hasMore;
+        batchCount++;
+        if (result.deleted > 0) {
+          console.warn(`Deleted ${result.deleted} from ${table}`);
+        }
       }
     }
 
-    return { status: 'success', message: `Cleared ${totalDeleted} documents across ${tables.length} tables` };
+    return { status: 'success', message: `Cleared ${totalDeleted} documents` };
   },
 });
 
@@ -1713,7 +1733,7 @@ export const seedAll = internalAction({
 export const resetAndReseed = internalAction({
   handler: async (ctx): Promise<Record<string, unknown>> => {
     console.warn('🗑️ Clearing all data...');
-    const clearResult: Record<string, unknown> = await ctx.runMutation(internal.seedComprehensive.clearAllData) as Record<string, unknown>;
+    const clearResult: Record<string, unknown> = await ctx.runAction(internal.seedComprehensive.clearAllData) as Record<string, unknown>;
     console.warn('Clear:', JSON.stringify(clearResult));
 
     console.warn('🌱 Re-seeding...');

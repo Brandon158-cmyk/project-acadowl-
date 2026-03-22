@@ -4,31 +4,48 @@ import { withSchoolScope } from '../_lib/schoolContext';
 import { requirePermission, Permission } from '../_lib/permissions';
 
 // Get the current user's profile and linked data
+// Returns null if unauthenticated (safe for auth pages)
 export const me = query({
   handler: async (ctx) => {
-    return withSchoolScope(ctx, async ({ userId, schoolId }) => {
-      const user = await ctx.db.get(userId);
-      if (!user) return null;
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null; // Not authenticated - return null instead of throwing
+    }
 
-      // Load linked profile data
-      let profile = null;
-      if (user.staffId) {
-        profile = await ctx.db.get(user.staffId);
-      } else if (user.guardianId) {
-        profile = await ctx.db.get(user.guardianId);
-      } else if (user.studentId) {
-        profile = await ctx.db.get(user.studentId);
-      }
+    // Get user from database to find their school
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
+      .unique();
 
-      // Load school data
-      const school = schoolId ? await ctx.db.get(schoolId) : null;
+    if (!user) {
+      return null; // No user record yet - return null
+    }
 
-      return {
-        ...user,
-        profile,
-        school,
-      };
-    });
+    if (!user.isActive) {
+      return null; // Deactivated user - return null
+    }
+
+    const schoolId = user.schoolId;
+
+    // Load linked profile data
+    let profile = null;
+    if (user.staffId) {
+      profile = await ctx.db.get(user.staffId);
+    } else if (user.guardianId) {
+      profile = await ctx.db.get(user.guardianId);
+    } else if (user.studentId) {
+      profile = await ctx.db.get(user.studentId);
+    }
+
+    // Load school data
+    const school = schoolId ? await ctx.db.get(schoolId) : null;
+
+    return {
+      ...user,
+      profile,
+      school,
+    };
   },
 });
 

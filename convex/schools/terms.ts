@@ -203,23 +203,46 @@ export const getTermsByYear = query({
 
 export const getCurrentTerm = query({
   handler: async (ctx) => {
-    return withSchoolScope(ctx, async ({ schoolId }) => {
-      const scopedSchoolId = ensureSchoolId(schoolId);
-      const term = await ctx.db
-        .query('terms')
-        .withIndex('by_current', (q) => q.eq('schoolId', scopedSchoolId).eq('isCurrent', true))
-        .unique();
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null; // Not authenticated
+    }
 
-      if (!term) {
-        return null;
-      }
+    // Get user from database
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
+      .unique();
 
-      const daysRemaining = Math.max(0, Math.ceil((term.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
+    if (!user || !user.isActive) {
+      return null; // No user or deactivated
+    }
 
-      return {
-        ...term,
-        daysRemaining,
-      };
-    });
+    // Platform admins or users without school assignment - return null
+    if (user.role === 'platform_admin') {
+      return null;
+    }
+
+    const schoolId = user.schoolId;
+
+    if (!schoolId) {
+      return null;
+    }
+
+    const term = await ctx.db
+      .query('terms')
+      .withIndex('by_current', (q) => q.eq('schoolId', schoolId).eq('isCurrent', true))
+      .unique();
+
+    if (!term) {
+      return null;
+    }
+
+    const daysRemaining = Math.max(0, Math.ceil((term.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
+
+    return {
+      ...term,
+      daysRemaining,
+    };
   },
 });

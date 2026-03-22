@@ -178,12 +178,31 @@ export const getAcademicYears = query({
 
 export const getCurrentAcademicYear = query({
   handler: async (ctx) => {
-    return withSchoolScope(ctx, async ({ schoolId }) => {
-      const scopedSchoolId = ensureSchoolId(schoolId);
-      return ctx.db
-        .query('academicYears')
-        .withIndex('by_current', (q) => q.eq('schoolId', scopedSchoolId).eq('isCurrent', true))
-        .unique();
-    });
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null; // Not authenticated
+    }
+
+    // Get user from database
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
+      .unique();
+
+    if (!user || !user.isActive) {
+      return null; // No user or deactivated
+    }
+
+    // Platform admins or users without school assignment - return null
+    if (!user.schoolId || user.role === 'platform_admin') {
+      return null;
+    }
+
+    const schoolId = user.schoolId;
+
+    return ctx.db
+      .query('academicYears')
+      .withIndex('by_current', (q) => q.eq('schoolId', schoolId).eq('isCurrent', true))
+      .unique();
   },
 });

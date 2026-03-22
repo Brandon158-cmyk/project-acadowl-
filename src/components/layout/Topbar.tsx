@@ -2,16 +2,26 @@
 
 import { useQuery } from "convex/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   Menu,
   GraduationCap,
-  Terminal,
   ChevronsUpDown,
   Calendar,
+  LogOut,
 } from "lucide-react";
 import { api } from "@/../convex/_generated/api";
 import { useMe } from "@/hooks/useMe";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface TopbarProps {
   onMenuToggle?: () => void;
@@ -80,7 +90,15 @@ function TopbarAcademicContext() {
 
 export function Topbar({ onMenuToggle }: TopbarProps) {
   const { user } = useMe();
+  const router = useRouter();
   const hasSchoolContext = Boolean(user?.school?._id);
+
+  const handleSignOut = async () => {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-50 flex h-14 w-full shrink-0 items-center justify-between border-b border-border-panel bg-white px-4">
@@ -130,12 +148,31 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
               {user?.name ?? "User"}
             </p>
           </div>
-          <div className="h-8 w-8 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center overflow-hidden">
-            {/* Fallback avatar */}
-            <span className="text-[10px] font-bold text-accent">
-              {user?.name?.[0].toUpperCase()}
-            </span>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <button
+                type="button"
+                className="h-8 w-8 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center overflow-hidden cursor-pointer hover:bg-accent/20 transition-colors"
+              >
+                <span className="text-[10px] font-bold text-accent">
+                  {user?.name?.[0].toUpperCase()}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={4}>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium text-text-primary">{user?.name}</p>
+                  <p className="text-xs text-text-secondary">{user?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
