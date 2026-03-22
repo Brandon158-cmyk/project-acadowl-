@@ -167,6 +167,12 @@ export default defineSchema({
       absenceAlert: v.optional(v.string()),
       attendanceBroadcast: v.optional(v.string()),
       academicYearActivated: v.optional(v.string()),
+      feeReminderPreDue: v.optional(v.string()),
+      feeReminderDueToday: v.optional(v.string()),
+      feeReminder7Day: v.optional(v.string()),
+      feeReminder14Day: v.optional(v.string()),
+      feeReminder21Day: v.optional(v.string()),
+      paymentReceipt: v.optional(v.string()),
     })),
     gradingScales: v.optional(v.array(v.object({
       name: v.string(),
@@ -182,6 +188,7 @@ export default defineSchema({
       showPrincipalRemarks: v.boolean(),
       showAttendanceSummary: v.boolean(),
       showSubjectPositions: v.boolean(),
+      showFeesDueNotice: v.optional(v.boolean()),
     })),
 
     // Features & subscription
@@ -205,7 +212,66 @@ export default defineSchema({
     siblingDiscountRules: v.optional(v.array(v.object({
       childIndex: v.number(),
       discountPercent: v.number(),
+      applyToFeeTypes: v.optional(v.array(v.string())),
     }))),
+
+    // Fee types registry (Sprint 02 ISSUE-091)
+    feeTypes: v.optional(v.array(v.object({
+      id: v.string(),
+      name: v.string(),
+      description: v.optional(v.string()),
+      isRecurring: v.boolean(),
+      isOptional: v.boolean(),
+      appliesToBoarding: v.union(
+        v.literal('day_only'),
+        v.literal('boarding_only'),
+        v.literal('all'),
+      ),
+      zraLevyCode: v.optional(v.string()),
+      zraVatCategory: v.union(
+        v.literal('exempt'),
+        v.literal('standard'),
+        v.literal('zero_rated'),
+        v.literal('levy'),
+      ),
+      isActive: v.boolean(),
+      order: v.number(),
+    }))),
+
+    // Mobile money configuration (Sprint 02 ISSUE-109)
+    mobileMoneyConfig: v.optional(v.object({
+      airtel: v.optional(v.object({
+        merchantCode: v.string(),
+        merchantName: v.string(),
+        apiClientId: v.string(),
+        apiSecret: v.string(),
+        isActive: v.boolean(),
+      })),
+      mtn: v.optional(v.object({
+        merchantCode: v.string(),
+        apiUserId: v.string(),
+        apiKey: v.string(),
+        subscriptionKey: v.string(),
+        callbackHost: v.string(),
+        isActive: v.boolean(),
+      })),
+      paymentReferenceFormat: v.optional(v.string()),
+      paymentInstructions: v.optional(v.string()),
+    })),
+
+    // Arrears policy (Sprint 02 ISSUE-120)
+    arrearsPolicy: v.optional(v.object({
+      reminderScheduleDays: v.array(v.number()),
+      blockExamAccessAtDays: v.optional(v.number()),
+      holdReportCardAtDays: v.optional(v.number()),
+      requireFullPaymentForPromotion: v.boolean(),
+      gracePeriodDays: v.number(),
+      arrangementNote: v.optional(v.string()),
+    })),
+
+    // ZRA VSDC (Sprint 02 ISSUE-103)
+    zraVsdcSerial: v.optional(v.string()),
+    zraBranchCode: v.optional(v.string()),
 
     // Status
     isActive: v.boolean(),
@@ -626,68 +692,115 @@ export default defineSchema({
 
   feeStructures: defineTable({
     schoolId: v.id('schools'),
-    academicYearId: v.id('academicYears'),
-    name: v.string(),
+    termId: v.id('terms'),
     gradeId: v.optional(v.id('grades')),
-    boardingStatus: v.optional(v.union(v.literal('day'), v.literal('boarder'))),
-    items: v.array(v.object({
-      name: v.string(),
-      amount: v.number(),
-      isOptional: v.boolean(),
+    feeTypeId: v.string(),
+    boardingStatus: v.union(v.literal('day'), v.literal('boarding'), v.literal('all')),
+    amountZMW: v.number(),
+    earlyPaymentDiscount: v.optional(v.object({
+      deadlineDate: v.string(),
+      discountPercent: v.number(),
     })),
-    totalAmount: v.number(),
+    instalmentSchedule: v.optional(v.array(v.object({
+      dueDate: v.string(),
+      amountZMW: v.number(),
+      label: v.string(),
+    }))),
+    notes: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index('by_school', ['schoolId'])
-    .index('by_academic_year', ['academicYearId']),
+    .index('by_term', ['schoolId', 'termId'])
+    .index('by_term_grade', ['schoolId', 'termId', 'gradeId'])
+    .index('by_term_grade_feetype', ['schoolId', 'termId', 'gradeId', 'feeTypeId']),
 
   invoices: defineTable({
     schoolId: v.id('schools'),
     studentId: v.id('students'),
-    feeStructureId: v.optional(v.id('feeStructures')),
-    termId: v.optional(v.id('terms')),
+    guardianId: v.optional(v.id('guardians')),
+    termId: v.id('terms'),
     invoiceNumber: v.string(),
-    items: v.array(v.object({
-      name: v.string(),
-      amount: v.number(),
+    lineItems: v.array(v.object({
+      description: v.string(),
+      quantity: v.number(),
+      unitPriceZMW: v.number(),
+      totalZMW: v.number(),
+      feeTypeId: v.string(),
+      vatCategory: v.union(
+        v.literal('exempt'),
+        v.literal('standard'),
+        v.literal('zero_rated'),
+        v.literal('levy'),
+      ),
+      vatZMW: v.number(),
+      isProrated: v.optional(v.boolean()),
+      prorationNote: v.optional(v.string()),
     })),
-    totalAmount: v.number(),
-    paidAmount: v.number(),
-    balanceAmount: v.number(),
+    subtotalZMW: v.number(),
+    vatZMW: v.number(),
+    discountZMW: v.number(),
+    siblingDiscountZMW: v.number(),
+    earlyPaymentDiscountZMW: v.optional(v.number()),
+    totalZMW: v.number(),
+    paidZMW: v.number(),
+    balanceZMW: v.number(),
     status: v.union(
       v.literal('draft'),
       v.literal('sent'),
-      v.literal('partially_paid'),
+      v.literal('partial'),
       v.literal('paid'),
       v.literal('overdue'),
-      v.literal('voided'),
+      v.literal('void'),
     ),
-    dueDate: v.optional(v.number()),
+    dueDate: v.number(),
+    prorationFactor: v.optional(v.number()),
+    consolidatedInvoiceId: v.optional(v.id('consolidatedInvoices')),
+    // ZRA VSDC
     zraFiscalCode: v.optional(v.string()),
+    zraQrCodeUrl: v.optional(v.string()),
+    zraSubmittedAt: v.optional(v.number()),
+    zraStatus: v.union(
+      v.literal('pending'),
+      v.literal('submitted'),
+      v.literal('accepted'),
+      v.literal('failed'),
+      v.literal('not_required'),
+    ),
+    isMockFiscalCode: v.optional(v.boolean()),
+    pdfUrl: v.optional(v.string()),
     issuedBy: v.optional(v.id('users')),
+    feesDueOnReportCard: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index('by_school', ['schoolId'])
     .index('by_student', ['studentId'])
+    .index('by_student_term', ['studentId', 'termId'])
     .index('by_invoice_number', ['schoolId', 'invoiceNumber'])
-    .index('by_status', ['schoolId', 'status']),
+    .index('by_status', ['schoolId', 'status'])
+    .index('by_school_term', ['schoolId', 'termId'])
+    .index('by_guardian', ['guardianId']),
 
   payments: defineTable({
     schoolId: v.id('schools'),
     invoiceId: v.id('invoices'),
     studentId: v.id('students'),
-    amount: v.number(),
+    amountZMW: v.number(),
     method: v.union(
       v.literal('cash'),
       v.literal('bank_transfer'),
       v.literal('airtel_money'),
       v.literal('mtn_momo'),
       v.literal('cheque'),
+      v.literal('pocket_money_deduction'),
+      v.literal('scholarship'),
     ),
     reference: v.optional(v.string()),
+    mobileMoneyReference: v.optional(v.string()),
+    payerPhone: v.optional(v.string()),
     receiptNumber: v.optional(v.string()),
+    receiptPdfUrl: v.optional(v.string()),
     status: v.union(
       v.literal('pending'),
       v.literal('confirmed'),
@@ -695,14 +808,247 @@ export default defineSchema({
       v.literal('reversed'),
     ),
     recordedBy: v.optional(v.id('users')),
+    receivedBy: v.optional(v.id('users')),
+    receivedAt: v.optional(v.number()),
     confirmedAt: v.optional(v.number()),
+    notes: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index('by_school', ['schoolId'])
     .index('by_invoice', ['invoiceId'])
     .index('by_student', ['studentId'])
-    .index('by_reference', ['reference']),
+    .index('by_reference', ['reference'])
+    .index('by_mobile_money_ref', ['mobileMoneyReference'])
+    .index('by_school_date', ['schoolId', 'createdAt']),
+
+  // ─── Invoice Runs (Sprint 02 ISSUE-096) ───
+
+  invoiceRuns: defineTable({
+    schoolId: v.id('schools'),
+    termId: v.id('terms'),
+    triggeredBy: v.id('users'),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('running'),
+      v.literal('complete'),
+      v.literal('failed'),
+    ),
+    totalStudents: v.number(),
+    processed: v.number(),
+    successful: v.number(),
+    skipped: v.number(),
+    errored: v.number(),
+    errors: v.array(
+      v.object({
+        studentId: v.id('students'),
+        studentName: v.string(),
+        reason: v.string(),
+      }),
+    ),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_school_term', ['schoolId', 'termId']),
+
+  // ─── Consolidated Invoices (Sprint 02 ISSUE-106) ───
+
+  consolidatedInvoices: defineTable({
+    schoolId: v.id('schools'),
+    guardianId: v.id('guardians'),
+    termId: v.id('terms'),
+    childInvoiceIds: v.array(v.id('invoices')),
+    invoiceNumber: v.string(),
+    totalZMW: v.number(),
+    paidZMW: v.number(),
+    balanceZMW: v.number(),
+    zraFiscalCode: v.optional(v.string()),
+    zraQrCodeUrl: v.optional(v.string()),
+    pdfUrl: v.optional(v.string()),
+    status: v.union(
+      v.literal('open'),
+      v.literal('partial'),
+      v.literal('paid'),
+      v.literal('void'),
+    ),
+    createdAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_guardian_term', ['guardianId', 'termId']),
+
+  // ─── Unallocated Payments (Sprint 02 ISSUE-111) ───
+
+  unallocatedPayments: defineTable({
+    schoolId: v.id('schools'),
+    source: v.union(v.literal('airtel_money'), v.literal('mtn_momo')),
+    transactionId: v.string(),
+    payerPhone: v.string(),
+    amountZMW: v.number(),
+    receivedAt: v.number(),
+    rawPayload: v.string(),
+    status: v.union(
+      v.literal('unresolved'),
+      v.literal('allocated'),
+      v.literal('refunded'),
+    ),
+    allocatedToInvoiceId: v.optional(v.id('invoices')),
+    resolvedBy: v.optional(v.id('users')),
+    resolvedAt: v.optional(v.number()),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_status', ['schoolId', 'status']),
+
+  // ─── Bank Statement Imports (Sprint 02 ISSUE-113) ───
+
+  bankStatementImports: defineTable({
+    schoolId: v.id('schools'),
+    bankName: v.string(),
+    accountNumber: v.string(),
+    statementPeriodFrom: v.string(),
+    statementPeriodTo: v.string(),
+    totalTransactions: v.number(),
+    matchedTransactions: v.number(),
+    unmatchedTransactions: v.number(),
+    uploadedBy: v.id('users'),
+    uploadedAt: v.number(),
+    fileUrl: v.string(),
+    status: v.union(
+      v.literal('pending_review'),
+      v.literal('reconciled'),
+    ),
+  })
+    .index('by_school', ['schoolId']),
+
+  // ─── Guardian Ledger (Sprint 02 ISSUE-114) ───
+
+  guardianLedger: defineTable({
+    schoolId: v.id('schools'),
+    guardianId: v.id('guardians'),
+    studentId: v.id('students'),
+    termId: v.id('terms'),
+    entryType: v.union(
+      v.literal('invoice'),
+      v.literal('payment'),
+      v.literal('credit_note'),
+      v.literal('sibling_discount'),
+      v.literal('early_payment_discount'),
+    ),
+    description: v.string(),
+    debitZMW: v.number(),
+    creditZMW: v.number(),
+    balanceAfterZMW: v.number(),
+    referenceId: v.string(),
+    transactionDate: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_guardian_student', ['guardianId', 'studentId'])
+    .index('by_school_term', ['schoolId', 'termId']),
+
+  // ─── Credit Notes (Sprint 02 ISSUE-115) ───
+
+  creditNotes: defineTable({
+    schoolId: v.id('schools'),
+    invoiceId: v.id('invoices'),
+    studentId: v.id('students'),
+    guardianId: v.id('guardians'),
+    creditNoteNumber: v.string(),
+    amountZMW: v.number(),
+    reason: v.string(),
+    type: v.union(
+      v.literal('correction'),
+      v.literal('refund'),
+      v.literal('scholarship'),
+      v.literal('boarding_adjustment'),
+      v.literal('transport_adjustment'),
+      v.literal('overpayment_refund'),
+    ),
+    zraFiscalCode: v.optional(v.string()),
+    zraCreditNoteNumber: v.optional(v.string()),
+    authorisedBy: v.id('users'),
+    status: v.union(
+      v.literal('issued'),
+      v.literal('applied'),
+      v.literal('refunded'),
+    ),
+    appliedToInvoiceId: v.optional(v.id('invoices')),
+    createdAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_invoice', ['invoiceId']),
+
+  // ─── Scholarships (Sprint 02 ISSUE-117) ───
+
+  scholarships: defineTable({
+    schoolId: v.id('schools'),
+    studentId: v.id('students'),
+    name: v.string(),
+    provider: v.string(),
+    discountType: v.union(
+      v.literal('full'),
+      v.literal('partial_percent'),
+      v.literal('partial_fixed'),
+    ),
+    discountPercent: v.optional(v.number()),
+    discountFixedZMW: v.optional(v.number()),
+    applyToFeeTypes: v.array(v.string()),
+    validFrom: v.string(),
+    validTo: v.string(),
+    notes: v.optional(v.string()),
+    documentUrl: v.optional(v.string()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index('by_student', ['studentId'])
+    .index('by_school', ['schoolId']),
+
+  // ─── Reminder Log (Sprint 02 ISSUE-119) ───
+
+  reminderLog: defineTable({
+    schoolId: v.id('schools'),
+    invoiceId: v.id('invoices'),
+    guardianId: v.id('guardians'),
+    reminderType: v.string(),
+    channel: v.string(),
+    sentAt: v.number(),
+    notificationId: v.optional(v.id('notifications')),
+  })
+    .index('by_invoice', ['invoiceId'])
+    .index('by_school', ['schoolId']),
+
+  // ─── Fee Audit Log (Sprint 02 ISSUE-128) ───
+
+  feeAuditLog: defineTable({
+    schoolId: v.id('schools'),
+    action: v.union(
+      v.literal('invoice_created'),
+      v.literal('invoice_voided'),
+      v.literal('payment_recorded'),
+      v.literal('payment_reversed'),
+      v.literal('credit_note_created'),
+      v.literal('scholarship_applied'),
+      v.literal('zra_submitted'),
+      v.literal('zra_failed'),
+      v.literal('fee_structure_changed'),
+      v.literal('invoice_regenerated'),
+    ),
+    performedBy: v.id('users'),
+    relatedInvoiceId: v.optional(v.id('invoices')),
+    relatedPaymentId: v.optional(v.id('payments')),
+    relatedStudentId: v.optional(v.id('students')),
+    amountZMW: v.optional(v.number()),
+    previousValue: v.optional(v.string()),
+    newValue: v.optional(v.string()),
+    ipAddress: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_invoice', ['relatedInvoiceId'])
+    .index('by_student', ['relatedStudentId'])
+    .index('by_performed_by', ['performedBy']),
 
   // ─── Notifications ───
 
