@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation } from '../_generated/server';
+import { internal } from '../_generated/api';
 import { throwError } from '../_lib/errors';
 import { Permission, requirePermission } from '../_lib/permissions';
 import { withSchoolScope } from '../_lib/schoolContext';
@@ -108,6 +109,13 @@ export const enrollStudent = mutation({
           guardianId: await resolveGuardianLink(ctx, scopedSchoolId, guardian),
           relationship: guardian.relationship,
           isPrimary: guardian.isPrimary,
+          canSeeResults: true,
+          canSeeAttendance: true,
+          canPayFees: true,
+          canSendMessages: guardian.isPrimary,
+          notificationOverrides: {
+            useGlobalPrefs: true,
+          },
         })),
       );
 
@@ -155,6 +163,14 @@ export const enrollStudent = mutation({
         `${args.firstName.trim()} ${args.lastName.trim()} has been enrolled as ${studentNumber}.`,
         `/students/${studentId}`,
       );
+
+      for (const guardianLink of guardianLinks) {
+        await ctx.runMutation(internal.guardian.activation.queueGuardianInvitation, {
+          schoolId: scopedSchoolId,
+          guardianId: guardianLink.guardianId,
+          studentId,
+        });
+      }
 
       return { studentId, studentNumber };
     });
@@ -320,7 +336,18 @@ export const bulkImportStudents = mutation({
             currentSectionId: row.sectionId,
             enrollmentStatus: 'active',
             enrolledAt: now,
-            guardianLinks: [{ guardianId, relationship: 'parent', isPrimary: true }],
+            guardianLinks: [{
+              guardianId,
+              relationship: 'parent',
+              isPrimary: true,
+              canSeeResults: true,
+              canSeeAttendance: true,
+              canPayFees: true,
+              canSendMessages: true,
+              notificationOverrides: {
+                useGlobalPrefs: true,
+              },
+            }],
             createdAt: now,
             updatedAt: now,
           });
@@ -336,6 +363,12 @@ export const bulkImportStudents = mutation({
             effectiveDate: now,
             createdBy: userId,
             createdAt: now,
+          });
+
+          await ctx.runMutation(internal.guardian.activation.queueGuardianInvitation, {
+            schoolId: scopedSchoolId,
+            guardianId,
+            studentId,
           });
 
           results.successCount++;

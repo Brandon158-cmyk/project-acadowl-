@@ -1,8 +1,8 @@
 import {
   LayoutDashboard,
-  GraduationCap,
   DollarSign,
-  ClipboardCheck,
+  MessageSquare,
+  Megaphone,
   Bell,
   type LucideIcon,
 } from 'lucide-react';
@@ -17,30 +17,29 @@ export interface NavItem {
 
 export const parentNavConfig: NavItem[] = [
   {
-    label: 'Home',
+    label: 'Dashboard',
     href: '/home',
     icon: LayoutDashboard,
   },
   {
-    label: 'Progress',
-    href: '/home/progress',
-    icon: GraduationCap,
-  },
-  {
-    label: 'Attendance',
-    href: '/home/attendance',
-    icon: ClipboardCheck,
-    feature: Feature.ATTENDANCE,
-  },
-  {
     label: 'Fees',
-    href: '/home/fees',
+    href: '/fees',
     icon: DollarSign,
     feature: Feature.FEES,
   },
   {
+    label: 'Messages',
+    href: '/messages',
+    icon: MessageSquare,
+  },
+  {
     label: 'Notices',
-    href: '/home/notices',
+    href: '/announcements',
+    icon: Megaphone,
+  },
+  {
+    label: 'Alerts',
+    href: '/profile/notifications',
     icon: Bell,
   },
 ];

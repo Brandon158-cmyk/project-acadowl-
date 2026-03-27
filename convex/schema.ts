@@ -174,6 +174,21 @@ export default defineSchema({
       feeReminder21Day: v.optional(v.string()),
       paymentReceipt: v.optional(v.string()),
     })),
+    sendWeeklyDigest: v.optional(v.boolean()),
+    allowStudentPortal: v.optional(v.boolean()),
+    whatsappConfig: v.optional(v.object({
+      accessToken: v.string(),
+      phoneNumberId: v.string(),
+      businessAccountId: v.string(),
+      verifyToken: v.string(),
+      isActive: v.boolean(),
+      defaultTemplates: v.object({
+        absenceAlert: v.string(),
+        feeReminder: v.string(),
+        reportCardReady: v.string(),
+        generalAnnouncement: v.string(),
+      }),
+    })),
     gradingScales: v.optional(v.array(v.object({
       name: v.string(),
       code: v.string(),
@@ -360,6 +375,7 @@ export default defineSchema({
     bankAccountNumber: v.optional(v.string()),
     napsa: v.optional(v.string()),
     tpin: v.optional(v.string()),
+    quickReplies: v.optional(v.array(v.string())),
 
     isActive: v.boolean(),
     createdAt: v.number(),
@@ -387,6 +403,36 @@ export default defineSchema({
     ),
     address: v.optional(v.string()),
     preferredContactMethod: v.optional(v.union(v.literal('sms'), v.literal('whatsapp'), v.literal('email'))),
+    whatsappPhone: v.optional(v.string()),
+    occupation: v.optional(v.string()),
+    employer: v.optional(v.string()),
+    receiveAttendanceSMS: v.optional(v.boolean()),
+    receiveResultsSMS: v.optional(v.boolean()),
+    receiveFeeReminderSMS: v.optional(v.boolean()),
+    receiveWeeklyDigest: v.optional(v.boolean()),
+    notificationPreferences: v.optional(v.object({
+      smsEnabled: v.boolean(),
+      whatsappEnabled: v.boolean(),
+      pushEnabled: v.boolean(),
+      emailEnabled: v.boolean(),
+      attendanceAbsent: v.boolean(),
+      attendanceLate: v.boolean(),
+      resultsReleased: v.boolean(),
+      feeInvoiceGenerated: v.boolean(),
+      feeReminder: v.boolean(),
+      feePaymentConfirmed: v.boolean(),
+      homeworkAssigned: v.boolean(),
+      newMessage: v.boolean(),
+      schoolAnnouncement: v.boolean(),
+      weeklyDigest: v.boolean(),
+      sickBayAdmission: v.boolean(),
+      visitorArrival: v.boolean(),
+      pocketMoneyWithdrawal: v.boolean(),
+      nightPrepAbsent: v.boolean(),
+      busArriving: v.boolean(),
+      studentNotBoarded: v.boolean(),
+      routeDelay: v.boolean(),
+    })),
     isVerified: v.optional(v.boolean()),
 
     isActive: v.boolean(),
@@ -426,6 +472,26 @@ export default defineSchema({
       guardianId: v.id('guardians'),
       relationship: v.string(),
       isPrimary: v.boolean(),
+      canSeeResults: v.optional(v.boolean()),
+      canSeeAttendance: v.optional(v.boolean()),
+      canPayFees: v.optional(v.boolean()),
+      canSendMessages: v.optional(v.boolean()),
+      notificationOverrides: v.optional(v.object({
+        useGlobalPrefs: v.boolean(),
+        smsEnabled: v.optional(v.boolean()),
+        whatsappEnabled: v.optional(v.boolean()),
+        pushEnabled: v.optional(v.boolean()),
+        attendanceAbsent: v.optional(v.boolean()),
+        attendanceLate: v.optional(v.boolean()),
+        resultsReleased: v.optional(v.boolean()),
+        feeInvoiceGenerated: v.optional(v.boolean()),
+        feeReminder: v.optional(v.boolean()),
+        feePaymentConfirmed: v.optional(v.boolean()),
+        homeworkAssigned: v.optional(v.boolean()),
+        newMessage: v.optional(v.boolean()),
+        schoolAnnouncement: v.optional(v.boolean()),
+        weeklyDigest: v.optional(v.boolean()),
+      })),
     }))),
 
     // Boarding (Feature.BOARDING)
@@ -455,6 +521,42 @@ export default defineSchema({
     .index('by_grade', ['schoolId', 'currentGradeId'])
     .index('by_email', ['schoolId', 'email'])
     .index('by_phone', ['schoolId', 'phone']),
+
+  guardianInvitations: defineTable({
+    schoolId: v.id('schools'),
+    guardianId: v.id('guardians'),
+    studentId: v.id('students'),
+    token: v.string(),
+    sentTo: v.string(),
+    status: v.union(
+      v.literal('sent'),
+      v.literal('accepted'),
+      v.literal('expired'),
+      v.literal('resent'),
+    ),
+    sentAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+    expiresAt: v.number(),
+  })
+    .index('by_token', ['token'])
+    .index('by_guardian', ['guardianId'])
+    .index('by_school', ['schoolId']),
+
+  guardianLinkDisputes: defineTable({
+    schoolId: v.id('schools'),
+    guardianId: v.id('guardians'),
+    studentId: v.id('students'),
+    reason: v.string(),
+    status: v.union(
+      v.literal('open'),
+      v.literal('resolved'),
+      v.literal('dismissed'),
+    ),
+    resolvedBy: v.optional(v.id('users')),
+    resolvedAt: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index('by_school', ['schoolId']),
 
   platformAdmins: defineTable({
     userId: v.id('users'),
@@ -648,6 +750,27 @@ export default defineSchema({
     .index('by_section_date', ['sectionId', 'date'])
     .index('by_client_id', ['clientId']),
 
+  absenceExplanations: defineTable({
+    schoolId: v.id('schools'),
+    studentId: v.id('students'),
+    guardianId: v.id('guardians'),
+    date: v.string(),
+    explanation: v.string(),
+    supportingDocUrl: v.optional(v.string()),
+    status: v.union(
+      v.literal('submitted'),
+      v.literal('accepted'),
+      v.literal('rejected'),
+      v.literal('pending'),
+    ),
+    reviewedBy: v.optional(v.id('staff')),
+    reviewNote: v.optional(v.string()),
+    submittedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+  })
+    .index('by_student_date', ['studentId', 'date'])
+    .index('by_school', ['schoolId']),
+
   // ─── Examinations ───
 
   examSessions: defineTable({
@@ -688,6 +811,33 @@ export default defineSchema({
     .index('by_session_student', ['examSessionId', 'studentId'])
     .index('by_session_section', ['examSessionId', 'sectionId'])
     .index('by_student', ['studentId']),
+
+  studentProgressSnapshots: defineTable({
+    schoolId: v.id('schools'),
+    studentId: v.id('students'),
+    sectionId: v.id('sections'),
+    termId: v.id('terms'),
+    weekNumber: v.number(),
+    snapshotDate: v.string(),
+    attendancePercentThisWeek: v.number(),
+    attendancePercentThisTerm: v.number(),
+    consecutiveAbsences: v.number(),
+    latestExamAverage: v.optional(v.number()),
+    lastExamSessionId: v.optional(v.id('examSessions')),
+    subjectsBelowPassMark: v.number(),
+    homeworkSubmissionRate: v.number(),
+    homeworkOverdueCount: v.number(),
+    feeBalanceZMW: v.number(),
+    daysOverdue: v.number(),
+    nightPrepAttendancePercent: v.optional(v.number()),
+    sickBayVisitsThisTerm: v.optional(v.number()),
+    riskScore: v.optional(v.number()),
+    riskFlags: v.optional(v.array(v.string())),
+    createdAt: v.number(),
+  })
+    .index('by_student_term', ['studentId', 'termId'])
+    .index('by_school_week', ['schoolId', 'weekNumber'])
+    .index('by_section', ['sectionId']),
 
   // ─── Finance ───
 
@@ -822,6 +972,30 @@ export default defineSchema({
     .index('by_reference', ['reference'])
     .index('by_mobile_money_ref', ['mobileMoneyReference'])
     .index('by_school_date', ['schoolId', 'createdAt']),
+
+  pendingPayments: defineTable({
+    schoolId: v.id('schools'),
+    invoiceId: v.id('invoices'),
+    guardianId: v.id('guardians'),
+    amountZMW: v.number(),
+    method: v.union(v.literal('airtel_money'), v.literal('mtn_momo')),
+    externalReference: v.string(),
+    status: v.union(
+      v.literal('awaiting_confirmation'),
+      v.literal('processing'),
+      v.literal('completed'),
+      v.literal('failed'),
+      v.literal('expired'),
+    ),
+    initiatedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    failureReason: v.optional(v.string()),
+    paymentContext: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_invoice', ['invoiceId'])
+    .index('by_guardian', ['guardianId'])
+    .index('by_school', ['schoolId']),
 
   // ─── Invoice Runs (Sprint 02 ISSUE-096) ───
 
@@ -1063,14 +1237,22 @@ export default defineSchema({
       v.literal('results'),
       v.literal('general'),
       v.literal('emergency'),
+      v.literal('message'),
+      v.literal('announcement'),
     ),
-    channel: v.optional(v.union(v.literal('in_app'), v.literal('sms'))),
+    channel: v.optional(v.union(
+      v.literal('in_app'),
+      v.literal('sms'),
+      v.literal('whatsapp'),
+      v.literal('push'),
+      v.literal('email'),
+    )),
     title: v.string(),
     body: v.string(),
     isRead: v.boolean(),
     link: v.optional(v.string()),
     status: v.optional(v.union(v.literal('queued'), v.literal('sent'), v.literal('delivered'), v.literal('failed'))),
-    provider: v.optional(v.union(v.literal('airtel'), v.literal('mtn'))),
+    provider: v.optional(v.union(v.literal('airtel'), v.literal('mtn'), v.literal('whatsapp'))),
     providerMessageId: v.optional(v.string()),
     providerResponse: v.optional(v.string()),
     retryCount: v.optional(v.number()),
@@ -1082,6 +1264,135 @@ export default defineSchema({
     .index('by_school', ['schoolId'])
     .index('by_user', ['userId'])
     .index('by_user_unread', ['userId', 'isRead']),
+
+  messageThreads: defineTable({
+    schoolId: v.id('schools'),
+    context: v.union(
+      v.literal('general'),
+      v.literal('boarding'),
+      v.literal('transport'),
+      v.literal('lms'),
+      v.literal('admin'),
+    ),
+    studentId: v.optional(v.id('students')),
+    participantIds: v.array(v.id('users')),
+    subject: v.string(),
+    lastMessageAt: v.number(),
+    lastMessagePreview: v.string(),
+    isArchived: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_participant', ['participantIds'])
+    .index('by_school_context', ['schoolId', 'context'])
+    .index('by_student', ['studentId']),
+
+  messages: defineTable({
+    schoolId: v.id('schools'),
+    threadId: v.id('messageThreads'),
+    senderId: v.id('users'),
+    body: v.string(),
+    attachmentUrl: v.optional(v.string()),
+    attachmentType: v.optional(v.union(v.literal('image'), v.literal('pdf'), v.literal('document'))),
+    readBy: v.array(v.object({
+      userId: v.id('users'),
+      readAt: v.number(),
+    })),
+    isSystemMessage: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index('by_thread', ['threadId'])
+    .index('by_school', ['schoolId'])
+    .index('by_sender', ['senderId']),
+
+  messageNotifications: defineTable({
+    schoolId: v.id('schools'),
+    userId: v.id('users'),
+    threadId: v.id('messageThreads'),
+    messageId: v.id('messages'),
+    isRead: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_unread', ['userId', 'isRead']),
+
+  announcements: defineTable({
+    schoolId: v.id('schools'),
+    title: v.string(),
+    body: v.string(),
+    category: v.union(
+      v.literal('general'),
+      v.literal('academic'),
+      v.literal('events'),
+      v.literal('fees'),
+      v.literal('holidays'),
+      v.literal('hostel'),
+      v.literal('transport'),
+      v.literal('emergency'),
+    ),
+    targetAudience: v.union(
+      v.literal('all'),
+      v.literal('parents_only'),
+      v.literal('students_only'),
+      v.literal('staff_only'),
+      v.literal('boarding_parents'),
+    ),
+    targetGradeIds: v.optional(v.array(v.id('grades'))),
+    attachmentUrl: v.optional(v.string()),
+    attachmentName: v.optional(v.string()),
+    sendSMS: v.boolean(),
+    sendWhatsApp: v.boolean(),
+    isPublished: v.boolean(),
+    publishedAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
+    isPinned: v.boolean(),
+    createdBy: v.id('users'),
+    createdAt: v.number(),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_school_published', ['schoolId', 'isPublished'])
+    .index('by_school_category', ['schoolId', 'category']),
+
+  pushSubscriptions: defineTable({
+    schoolId: v.id('schools'),
+    userId: v.id('users'),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+    userAgent: v.optional(v.string()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+  }).index('by_user', ['userId']),
+
+  profileChangeRequests: defineTable({
+    schoolId: v.id('schools'),
+    guardianId: v.id('guardians'),
+    changeType: v.literal('phone_number'),
+    currentValue: v.string(),
+    requestedValue: v.string(),
+    reason: v.string(),
+    status: v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected')),
+    processedBy: v.optional(v.id('users')),
+    processedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index('by_school', ['schoolId']),
+
+  guardianAdditionRequests: defineTable({
+    schoolId: v.id('schools'),
+    studentId: v.id('students'),
+    requestedByGuardianId: v.id('guardians'),
+    firstName: v.string(),
+    lastName: v.string(),
+    phone: v.string(),
+    relationship: v.string(),
+    status: v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected')),
+    reviewedBy: v.optional(v.id('users')),
+    reviewNote: v.optional(v.string()),
+    createdAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+  })
+    .index('by_school', ['schoolId'])
+    .index('by_student', ['studentId']),
 
   // ─── Boarding (Feature.BOARDING) ───
 

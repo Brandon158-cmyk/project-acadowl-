@@ -8,4 +8,11 @@ const crons = cronJobs();
 // Note: The actual per-school processing is handled by a separate internal mutation
 // that must be triggered with each school's ID. A top-level cron action will iterate schools.
 
+crons.weekly(
+  'student-progress-snapshot',
+  { dayOfWeek: 'friday', hourUTC: 14, minuteUTC: 0 },
+  internal.analytics.writeProgressSnapshots,
+  {},
+);
+
 export default crons;

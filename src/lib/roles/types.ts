@@ -94,6 +94,6 @@ export const ROLE_DASHBOARDS: Record<Role, string> = {
   [Role.MATRON]: '/dashboard',
   [Role.LIBRARIAN]: '/dashboard',
   [Role.DRIVER]: '/route',
-  [Role.GUARDIAN]: '/dashboard',
+  [Role.GUARDIAN]: '/home',
   [Role.STUDENT]: '/dashboard',
 };

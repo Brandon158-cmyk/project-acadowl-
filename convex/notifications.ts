@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { internalMutation, mutation, query } from './_generated/server';
+import { internalMutation, internalQuery, mutation, query } from './_generated/server';
 import { withSchoolScope } from './_lib/schoolContext';
 import { throwError } from './_lib/errors';
 import { ensureSchoolId } from './schools/_helpers';
@@ -12,6 +12,8 @@ const notificationTypeValidator = v.union(
   v.literal('results'),
   v.literal('general'),
   v.literal('emergency'),
+  v.literal('message'),
+  v.literal('announcement'),
 );
 
 export const createNotification = internalMutation({
@@ -20,12 +22,18 @@ export const createNotification = internalMutation({
     recipientUserId: v.optional(v.id('users')),
     recipientPhone: v.optional(v.string()),
     type: notificationTypeValidator,
-    channel: v.optional(v.union(v.literal('in_app'), v.literal('sms'))),
+    channel: v.optional(v.union(
+      v.literal('in_app'),
+      v.literal('sms'),
+      v.literal('whatsapp'),
+      v.literal('push'),
+      v.literal('email'),
+    )),
     subject: v.optional(v.string()),
     body: v.string(),
     link: v.optional(v.string()),
     status: v.optional(v.union(v.literal('queued'), v.literal('sent'), v.literal('delivered'), v.literal('failed'))),
-    provider: v.optional(v.union(v.literal('airtel'), v.literal('mtn'))),
+    provider: v.optional(v.union(v.literal('airtel'), v.literal('mtn'), v.literal('whatsapp'))),
     providerMessageId: v.optional(v.string()),
     providerResponse: v.optional(v.string()),
     retryCount: v.optional(v.number()),
@@ -69,11 +77,26 @@ export const createNotification = internalMutation({
   },
 });
 
+export const getByProviderMessageId = internalQuery({
+  args: {
+    schoolId: v.id('schools'),
+    providerMessageId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const records = await ctx.db
+      .query('notifications')
+      .withIndex('by_school', (q) => q.eq('schoolId', args.schoolId))
+      .collect();
+
+    return records.filter((record) => record.providerMessageId === args.providerMessageId);
+  },
+});
+
 export const updateDeliveryStatus = internalMutation({
   args: {
     notificationId: v.id('notifications'),
     status: v.union(v.literal('queued'), v.literal('sent'), v.literal('delivered'), v.literal('failed')),
-    provider: v.optional(v.union(v.literal('airtel'), v.literal('mtn'))),
+    provider: v.optional(v.union(v.literal('airtel'), v.literal('mtn'), v.literal('whatsapp'))),
     providerMessageId: v.optional(v.string()),
     providerResponse: v.optional(v.string()),
     retryCountDelta: v.optional(v.number()),
