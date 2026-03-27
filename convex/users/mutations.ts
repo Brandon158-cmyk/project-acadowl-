@@ -2,7 +2,21 @@ import { v } from 'convex/values';
 import { mutation, internalMutation, type MutationCtx } from '../_generated/server';
 import type { Doc } from '../_generated/dataModel';
 import { withSchoolScope } from '../_lib/schoolContext';
+import { Permission, requirePermission } from '../_lib/permissions';
 import { Role } from '../schema';
+
+const SchoolManagedRole = v.union(
+  v.literal('school_admin'),
+  v.literal('deputy_head'),
+  v.literal('bursar'),
+  v.literal('teacher'),
+  v.literal('class_teacher'),
+  v.literal('matron'),
+  v.literal('librarian'),
+  v.literal('driver'),
+  v.literal('guardian'),
+  v.literal('student'),
+);
 
 // Resolve user profile after Supabase login
 // Creates or updates the user document based on Supabase identity
@@ -59,6 +73,88 @@ export const resolveUserProfile = mutation({
     }
 
     return user;
+  },
+});
+
+export const setUserActiveStatus = mutation({
+  args: {
+    userId: v.id('users'),
+    isActive: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId, role, userId }) => {
+      requirePermission(role, Permission.MANAGE_USERS);
+
+      if (!schoolId) {
+        throw new Error('FORBIDDEN: Missing school scope');
+      }
+
+      const target = await ctx.db.get(args.userId);
+      if (!target || target.schoolId !== schoolId) {
+        throw new Error('NOT_FOUND: User was not found in your school scope');
+      }
+
+      if (target.role === 'platform_admin') {
+        throw new Error('FORBIDDEN: Platform admins cannot be modified here');
+      }
+
+      if (target._id === userId && !args.isActive) {
+        throw new Error('VALIDATION: You cannot deactivate your own account');
+      }
+
+      await ctx.db.patch(target._id, {
+        isActive: args.isActive,
+        updatedAt: Date.now(),
+      });
+
+      return { success: true };
+    });
+  },
+});
+
+export const updateUserRoleInSchool = mutation({
+  args: {
+    userId: v.id('users'),
+    role: SchoolManagedRole,
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId, role }) => {
+      requirePermission(role, Permission.MANAGE_USERS);
+
+      if (!schoolId) {
+        throw new Error('FORBIDDEN: Missing school scope');
+      }
+
+      const target = await ctx.db.get(args.userId);
+      if (!target || target.schoolId !== schoolId) {
+        throw new Error('NOT_FOUND: User was not found in your school scope');
+      }
+
+      if (target.role === 'platform_admin') {
+        throw new Error('FORBIDDEN: Platform admins cannot be modified here');
+      }
+
+      await ctx.db.patch(target._id, {
+        role: args.role,
+        updatedAt: Date.now(),
+      });
+
+      return { success: true };
+    });
+  },
+});
+
+export const markPasswordResetRequired = internalMutation({
+  args: {
+    userId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      isFirstLogin: true,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
   },
 });
 

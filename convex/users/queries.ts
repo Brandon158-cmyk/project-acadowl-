@@ -49,6 +49,84 @@ export const me = query({
   },
 });
 
+export const listForSchoolAdmin = query({
+  args: {
+    role: v.optional(v.string()),
+    search: v.optional(v.string()),
+    includeInactive: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return withSchoolScope(ctx, async ({ schoolId, role }) => {
+      requirePermission(role, Permission.MANAGE_USERS);
+
+      if (!schoolId) {
+        return [];
+      }
+
+      const users = await ctx.db
+        .query('users')
+        .withIndex('by_school', (q) => q.eq('schoolId', schoolId))
+        .collect();
+
+      const normalizedSearch = args.search?.trim().toLowerCase();
+      const includeInactive = args.includeInactive ?? false;
+      const limit = args.limit ?? 100;
+
+      const filtered = users
+        .filter((user) => (args.role ? user.role === args.role : true))
+        .filter((user) => (includeInactive ? true : user.isActive))
+        .filter((user) => {
+          if (!normalizedSearch) return true;
+
+          const haystack = [
+            user.name,
+            user.email ?? '',
+            user.phone ?? '',
+            user.role,
+          ].join(' ').toLowerCase();
+
+          return haystack.includes(normalizedSearch);
+        })
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, limit);
+
+      return Promise.all(
+        filtered.map(async (user) => {
+          const linkedStaff = user.staffId ? await ctx.db.get(user.staffId) : null;
+          const linkedGuardian = user.guardianId ? await ctx.db.get(user.guardianId) : null;
+          const linkedStudent = user.studentId ? await ctx.db.get(user.studentId) : null;
+
+          const linkedProfile = linkedStaff
+            ? {
+              type: 'staff' as const,
+              id: linkedStaff._id,
+              label: `${linkedStaff.firstName} ${linkedStaff.lastName}`,
+            }
+            : linkedGuardian
+              ? {
+                type: 'guardian' as const,
+                id: linkedGuardian._id,
+                label: `${linkedGuardian.firstName} ${linkedGuardian.lastName}`,
+              }
+              : linkedStudent
+                ? {
+                  type: 'student' as const,
+                  id: linkedStudent._id,
+                  label: `${linkedStudent.firstName} ${linkedStudent.lastName}`,
+                }
+                : null;
+
+          return {
+            ...user,
+            linkedProfile,
+          };
+        }),
+      );
+    });
+  },
+});
+
 // List users in the current school (admin only)
 export const list = query({
   args: {

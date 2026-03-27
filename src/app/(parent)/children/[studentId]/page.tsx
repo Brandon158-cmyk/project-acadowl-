@@ -3,14 +3,16 @@
 import { useQuery } from 'convex/react';
 import { useParams } from 'next/navigation';
 import { api } from '@/../convex/_generated/api';
+import type { Id } from '@/../convex/_generated/dataModel';
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { AlertCircle } from 'lucide-react';
 
 export default function ParentChildOverviewPage() {
   const params = useParams<{ studentId: string }>();
+  const studentId = params.studentId as Id<'students'>;
   const data = useQuery(api.guardian.dashboard.getChildOverviewForGuardian, {
-    studentId: params.studentId as any,
+    studentId,
   });
 
   if (data === undefined) {

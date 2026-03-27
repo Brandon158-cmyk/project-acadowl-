@@ -16,7 +16,9 @@ interface ParentShellProps {
 }
 
 function BottomNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
-  const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+  const isActive = item.href === '/home'
+    ? pathname === '/home'
+    : pathname === item.href || pathname.startsWith(item.href + '/');
   const isEnabled = useFeature(item.feature!);
 
   if (item.feature && !isEnabled) return null;

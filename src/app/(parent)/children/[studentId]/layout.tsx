@@ -30,7 +30,9 @@ export default function ParentChildLayout({ children }: { children: ReactNode })
         <div className="flex min-w-max items-center gap-2">
           {tabs.map((tab) => {
             const href = `${base}${tab.href}`;
-            const active = pathname === href;
+            const active = tab.href === ''
+              ? pathname === href
+              : pathname === href || pathname.startsWith(`${href}/`);
 
             return (
               <Link

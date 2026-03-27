@@ -4,18 +4,20 @@ import Link from 'next/link';
 import { useQuery } from 'convex/react';
 import { useParams } from 'next/navigation';
 import { api } from '@/../convex/_generated/api';
+import type { Id } from '@/../convex/_generated/dataModel';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MessageSquare } from 'lucide-react';
 
 export default function ParentChildMessagesPage() {
   const params = useParams<{ studentId: string }>();
+  const studentId = params.studentId as Id<'students'>;
   const threads = useQuery(api.messaging.queries.getThreadsForUser);
 
   if (threads === undefined) {
     return null;
   }
 
-  const studentThreads = threads.filter((thread) => thread.studentId === (params.studentId as any));
+  const studentThreads = threads.filter((thread) => thread.studentId === studentId);
 
   if (studentThreads.length === 0) {
     return (
@@ -30,7 +32,7 @@ export default function ParentChildMessagesPage() {
   return (
     <div className="space-y-3">
       {studentThreads.map((thread) => (
-        <Link key={thread._id} href={`/messages/${thread._id}`} className="block rounded-xl border border-gray-200 bg-white p-4">
+        <Link key={thread._id} href={`/home/messages/${thread._id}`} className="block rounded-xl border border-gray-200 bg-white p-4">
           <p className="text-sm font-medium text-onyx">{thread.subject}</p>
           <p className="mt-1 text-xs text-gray-500">{thread.lastMessagePreview}</p>
         </Link>

@@ -38,7 +38,7 @@ async function queueThreadRecipientNotifications(
       body: args.studentName
         ? `New message about ${args.studentName}: ${args.messagePreview}`
         : `New message: ${args.messagePreview}`,
-      link: `/messages/${thread._id}`,
+      link: `/home/messages/${thread._id}`,
       relatedEntityType: 'message_thread',
       relatedEntityId: thread._id,
     });
@@ -85,9 +85,9 @@ async function queueThreadRecipientNotifications(
       channel: 'sms',
       subject: 'New Acadowl message',
       body: args.studentName
-        ? `You have a new message about ${args.studentName} on Acadowl. View: /messages/${thread._id}`
-        : `You have a new message on Acadowl. View: /messages/${thread._id}`,
-      link: `/messages/${thread._id}`,
+        ? `You have a new message about ${args.studentName} on Acadowl. View: /home/messages/${thread._id}`
+        : `You have a new message on Acadowl. View: /home/messages/${thread._id}`,
+      link: `/home/messages/${thread._id}`,
       relatedEntityType: 'message_thread',
       relatedEntityId: thread._id,
     });

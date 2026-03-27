@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { useQuery } from 'convex/react';
 import { useParams } from 'next/navigation';
 import { api } from '@/../convex/_generated/api';
+import type { Id } from '@/../convex/_generated/dataModel';
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GraduationCap } from 'lucide-react';
 
 export default function ParentChildResultsPage() {
   const params = useParams<{ studentId: string }>();
+  const studentId = params.studentId as Id<'students'>;
   const data = useQuery(api.guardian.results.getResultsForGuardian, {
-    studentId: params.studentId as any,
+    studentId,
   });
 
   if (data === undefined) {
@@ -62,7 +64,7 @@ export default function ParentChildResultsPage() {
         </div>
       </section>
 
-      <Link href={`/children/${params.studentId}/results/report-cards`} className="inline-flex rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700">
+      <Link href={`/children/${studentId}/results/report-cards`} className="inline-flex rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700">
         View report cards
       </Link>
     </div>

@@ -23,18 +23,18 @@ export const parentNavConfig: NavItem[] = [
   },
   {
     label: 'Fees',
-    href: '/fees',
+    href: '/home/fees',
     icon: DollarSign,
     feature: Feature.FEES,
   },
   {
     label: 'Messages',
-    href: '/messages',
+    href: '/home/messages',
     icon: MessageSquare,
   },
   {
     label: 'Notices',
-    href: '/announcements',
+    href: '/home/notices',
     icon: Megaphone,
   },
   {

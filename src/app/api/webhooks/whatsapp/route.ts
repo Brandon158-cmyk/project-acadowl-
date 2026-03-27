@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../../../../../convex/_generated/api';
+import { api } from '../../../../../convex/_generated/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -14,9 +15,15 @@ function extractStatusPayload(payload: any) {
     return null;
   }
 
+  const rawStatus = String(status.status ?? '').toLowerCase();
+  const normalizedStatus =
+    rawStatus === 'sent' || rawStatus === 'delivered' || rawStatus === 'read' || rawStatus === 'failed'
+      ? rawStatus
+      : 'delivered';
+
   return {
     providerMessageId: status.id as string | undefined,
-    status: (status.status as 'sent' | 'delivered' | 'read' | 'failed') ?? 'delivered',
+    status: normalizedStatus as 'sent' | 'delivered' | 'read' | 'failed',
   };
 }
 
@@ -44,8 +51,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'ignored' }, { status: 200 });
     }
 
+    const scopedSchoolId = schoolId as Id<'schools'>;
+
     await convex.action(api.notificationsWhatsapp.processWhatsAppWebhookCallback, {
-      schoolId: schoolId as any,
+      schoolId: scopedSchoolId,
       providerMessageId: parsed.providerMessageId,
       status: parsed.status,
       rawPayload: JSON.stringify(payload),

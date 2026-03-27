@@ -175,36 +175,7 @@ export const processWhatsAppWebhookCallback = action({
   },
   handler: async (ctx, args): Promise<{ success: true; updated: number }> => {
     const { internal } = await import('./_generated/api');
-
-    if (!args.providerMessageId) {
-      return { success: true, updated: 0 };
-    }
-
-    const notifications: Array<{
-      _id: Id<'notifications'>;
-      provider?: 'airtel' | 'mtn' | 'whatsapp';
-    }> = await ctx.runQuery(internal.notifications.getByProviderMessageId, {
-      schoolId: args.schoolId,
-      providerMessageId: args.providerMessageId,
-    });
-
-    const matches = notifications.filter((item) => item.provider === 'whatsapp');
-
-    const normalizedStatus: 'sent' | 'delivered' | 'failed' = args.status === 'read'
-      ? 'delivered'
-      : args.status;
-
-    for (const item of matches) {
-      await ctx.runMutation(internal.notifications.updateDeliveryStatus, {
-        notificationId: item._id,
-        status: normalizedStatus,
-        provider: 'whatsapp',
-        providerMessageId: args.providerMessageId,
-        providerResponse: args.rawPayload,
-      });
-    }
-
-    return { success: true, updated: matches.length };
+    return ctx.runAction(internal.notificationsWhatsapp.processWhatsAppWebhook, args);
   },
 });
 

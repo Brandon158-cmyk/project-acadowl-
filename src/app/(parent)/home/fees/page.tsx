@@ -1,26 +1,57 @@
-import { DollarSign } from 'lucide-react';
+'use client';
+
+import Link from 'next/link';
+import { useQuery } from 'convex/react';
+import { Wallet } from 'lucide-react';
+import { api } from '@/../convex/_generated/api';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { FeedbackBanner } from '@/components/shared/FeedbackBanner';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { SectionCard } from '@/components/shared/SectionCard';
+import { PageSkeleton } from '@/components/shared/LoadingSkeleton';
 
 export default function ParentFeesPage() {
+  const data = useQuery(api.guardian.fees.getGuardianFeesOverview);
+
+  if (data === undefined) {
+    return <PageSkeleton />;
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Fees"
-        description="This screen is reserved for the finance workflows that will be completed in the fees wave."
+        description="Track balances and recent payments for all linked children."
       />
 
-      <FeedbackBanner
-        tone="warning"
-        title="Finance data is not part of Waves 1A and 2"
-        description="The fee portal is present for navigation consistency, but full fee balances, invoices, and payment flows will be introduced in the dedicated finance implementation wave."
-      />
+      <section className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <p className="text-xs text-gray-500">Total outstanding</p>
+            <p className="text-lg font-semibold text-onyx">ZMW {data.totalOutstandingZMW.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Credit balance</p>
+            <p className="text-lg font-semibold text-emerald-700">ZMW {data.creditBalanceZMW.toLocaleString()}</p>
+          </div>
+        </div>
+      </section>
 
-      <SectionCard title="Fee workspace" description="This placeholder preserves the complete parent navigation flow without exposing incomplete financial records.">
-        <EmptyState icon={DollarSign} title="Finance view pending" description="Fee balances, invoices, and payment actions will become available once the finance wave is implemented." />
-      </SectionCard>
+      {data.children.length === 0 ? (
+        <EmptyState icon={Wallet} title="No fee records" description="No linked student invoices are available yet." />
+      ) : (
+        <div className="space-y-3">
+          {data.children.map((child) => (
+            <Link
+              key={child.student._id}
+              href={`/children/${child.student._id}/fees`}
+              className="block rounded-xl border border-gray-200 bg-white p-4"
+            >
+              <p className="text-sm font-semibold text-onyx">{child.student.name}</p>
+              <p className="mt-1 text-xs text-gray-500">Balance</p>
+              <p className="text-base font-semibold text-amber-700">ZMW {child.balanceZMW.toLocaleString()}</p>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
