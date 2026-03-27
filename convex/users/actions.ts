@@ -34,6 +34,32 @@ function getSupabaseAdminConfig() {
   };
 }
 
+function extractSupabaseUuid(value?: string) {
+  if (!value) return null;
+
+  const candidate = value.includes('|') ? value.split('|')[1] : value;
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidPattern.test(candidate) ? candidate : null;
+}
+
+function extractSupabaseUserIdFromAdminResponse(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+  const direct = extractSupabaseUuid(typeof record.id === 'string' ? record.id : undefined);
+  if (direct) return direct;
+
+  const nested = record.user;
+  if (nested && typeof nested === 'object') {
+    const nestedRecord = nested as Record<string, unknown>;
+    return extractSupabaseUuid(typeof nestedRecord.id === 'string' ? nestedRecord.id : undefined);
+  }
+
+  return null;
+}
+
 // Admin-create a user in Supabase + Convex (platform admin only)
 // Uses Supabase Admin API via service role key
 export const adminCreateUser: ReturnType<typeof action> = action({
@@ -191,26 +217,74 @@ export const schoolAdminResetUserPassword: ReturnType<typeof action> = action({
       throw new Error('NOT_FOUND: User was not found in your school scope');
     }
 
-    if (!targetUser.supabaseId) {
-      throw new Error('VALIDATION: Target user has no Supabase account linkage');
+    const { authDomain, supabaseUrl, serviceRoleKey } = getSupabaseAdminConfig();
+
+    let supabaseUserId = extractSupabaseUuid(targetUser.supabaseId)
+      ?? extractSupabaseUuid(targetUser.tokenIdentifier);
+    let wasProvisioned = false;
+
+    if (!supabaseUserId) {
+      if (!targetUser.email) {
+        throw new Error('VALIDATION: Seeded user has no email, so Supabase login cannot be provisioned automatically');
+      }
+
+      const createResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+        },
+        body: JSON.stringify({
+          email: targetUser.email,
+          password: args.tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            role: targetUser.role,
+            name: targetUser.name,
+          },
+        }),
+      });
+
+      if (!createResponse.ok) {
+        const errorBody = await createResponse.text();
+        throw new Error(`Failed to provision Supabase account for seeded user: ${errorBody}`);
+      }
+
+      const createPayload = await createResponse.json();
+      const createdUserId = extractSupabaseUserIdFromAdminResponse(createPayload);
+      if (!createdUserId) {
+        throw new Error('INTERNAL: Could not determine Supabase user id for seeded user provisioning');
+      }
+
+      supabaseUserId = createdUserId;
+      wasProvisioned = true;
+
+      await ctx.runMutation(internal.users.mutations.linkSupabaseIdentity, {
+        userId: targetUser._id,
+        supabaseId: createdUserId,
+        tokenIdentifier: `${authDomain}|${createdUserId}`,
+        email: targetUser.email,
+      });
     }
 
-    const { supabaseUrl, serviceRoleKey } = getSupabaseAdminConfig();
-    const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${targetUser.supabaseId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${serviceRoleKey}`,
-        apikey: serviceRoleKey,
-      },
-      body: JSON.stringify({
-        password: args.tempPassword,
-      }),
-    });
+    if (!wasProvisioned) {
+      const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${supabaseUserId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+        },
+        body: JSON.stringify({
+          password: args.tempPassword,
+        }),
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`Failed to reset Supabase password: ${errorBody}`);
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`Failed to reset Supabase password: ${errorBody}`);
+      }
     }
 
     await ctx.runMutation(internal.users.mutations.markPasswordResetRequired, {
@@ -221,6 +295,7 @@ export const schoolAdminResetUserPassword: ReturnType<typeof action> = action({
       success: true,
       userId: targetUser._id,
       email: targetUser.email,
+      wasProvisioned,
     };
   },
 });

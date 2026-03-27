@@ -76,6 +76,25 @@ export const resolveUserProfile = mutation({
   },
 });
 
+export const linkSupabaseIdentity = internalMutation({
+  args: {
+    userId: v.id('users'),
+    supabaseId: v.string(),
+    tokenIdentifier: v.string(),
+    email: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      supabaseId: args.supabaseId,
+      tokenIdentifier: args.tokenIdentifier,
+      email: args.email,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
 export const setUserActiveStatus = mutation({
   args: {
     userId: v.id('users'),

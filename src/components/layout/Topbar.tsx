@@ -7,7 +7,6 @@ import {
   Bell,
   Menu,
   GraduationCap,
-  ChevronsUpDown,
   Calendar,
   LogOut,
 } from "lucide-react";
@@ -19,8 +18,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 interface TopbarProps {
@@ -149,21 +148,28 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
             </p>
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
               <button
                 type="button"
+                title="User menu"
+                aria-label="User menu"
                 className="h-8 w-8 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center overflow-hidden cursor-pointer hover:bg-accent/20 transition-colors"
               >
-                <span className="text-[10px] font-bold text-accent">
-                  {user?.name?.[0].toUpperCase()}
-                </span>
+                {user?.name?.[0] ? (
+                  <span className="text-[10px] font-bold text-accent">
+                    {user.name[0].toUpperCase()}
+                  </span>
+                ) : (
+                  <LogOut className="h-4 w-4 text-accent" />
+                )}
               </button>
             </DropdownMenuTrigger>
+
             <DropdownMenuContent align="end" sideOffset={4}>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium text-text-primary">{user?.name}</p>
-                  <p className="text-xs text-text-secondary">{user?.email}</p>
+                  <p className="text-sm font-medium text-text-primary">{user?.name ?? 'User'}</p>
+                  <p className="text-xs text-text-secondary">{user?.email ?? 'No email'}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
